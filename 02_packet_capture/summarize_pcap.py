@@ -21,6 +21,11 @@
       --capture-point "PC1 NIC (SW-A Fa0/1)" --test-description "10:02:00 ping -n 4 192.168.20.100" \\
       -o packet_summary.json
   python3 summarize_pcap.py validate packet_summary.json
+
+Windows 11
+  - python3 대신 py 를 쓴다:  py summarize_pcap.py extract ...
+  - tshark가 PATH에 없어도 C:\\Program Files\\Wireshark\\tshark.exe 를 자동으로 찾는다.
+  - PowerShell에서 줄을 나눌 때는 \\ 대신 ` (백틱)을 쓴다.
 """
 from __future__ import annotations
 
@@ -236,7 +241,7 @@ def read_packets(tshark: str, path: str) -> list[dict]:
     cmd = [tshark, "-n", "-r", path, "-T", "fields", "-E", "separator=\t", "-E", "occurrence=f"]
     for f in TSHARK_FIELDS:
         cmd += ["-e", f]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         msg = (proc.stderr or "").strip().splitlines()
         raise ToolError(EXIT_BAD_FILE, "tshark가 이 파일을 캡처 파일로 읽지 못했습니다: " + (msg[-1] if msg else f"exit {proc.returncode}"))
@@ -332,9 +337,25 @@ def build_notes(c: dict, extra: list[str], example: bool) -> str:
     return (EXAMPLE_MARK + " " + txt) if example else txt
 
 
+WINDOWS_TSHARK = [r"C:\Program Files\Wireshark\tshark.exe", r"C:\Program Files (x86)\Wireshark\tshark.exe"]
+
+
+def find_tshark(explicit: str | None) -> str | None:
+    """--tshark > PATH > Windows 기본 설치 경로 순서로 찾는다."""
+    if explicit:
+        return explicit if (os.path.isfile(explicit) or shutil.which(explicit)) else None
+    found = shutil.which("tshark")
+    if found:
+        return found
+    for cand in WINDOWS_TSHARK:
+        if os.path.isfile(cand):
+            return cand
+    return None
+
+
 def cmd_extract(a) -> int:
-    tshark = a.tshark or shutil.which("tshark")
-    if not tshark or not shutil.which(tshark):
+    tshark = find_tshark(a.tshark)
+    if not tshark:
         raise ToolError(EXIT_NO_TSHARK, "tshark를 찾을 수 없습니다. Wireshark 설치 시 TShark 구성요소를 포함하거나, "
                         "--tshark 로 경로를 지정하세요 (Windows 예: \"C:\\Program Files\\Wireshark\\tshark.exe\").")
     for name in ("source_ip", "destination_ip"):
