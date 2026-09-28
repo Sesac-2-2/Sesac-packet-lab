@@ -10,7 +10,8 @@
 #  - 장애 스위치는 2번의 캡처 연습·재현용이다. 팀 실제 사례의 장애 주입과 case_id 매핑은 4번(SRE) 담당이다.
 #
 # 사용법: sudo ./lab.sh <명령> ...   (도움말: ./lab.sh help)
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "[오류] 줄 $LINENO 에서 실패: $BASH_COMMAND" >&2; echo "        정리 후 다시: sudo ./lab.sh down && sudo ./lab.sh up" >&2' ERR
 
 DOMAIN="web.packetlab.example"
 HOSTS=(pc1 pc2 pc3 pc4 srv)
@@ -51,6 +52,7 @@ die()  { printf '[중단] %s\n' "$*" >&2; exit 1; }
 need_root() { [[ $EUID -eq 0 ]] || die "root 권한이 필요합니다. sudo ./lab.sh $* 로 실행하세요."; }
 nsx() { local ns=$1; shift; ip netns exec "$ns" "$@"; }
 is_up() { ip netns list 2>/dev/null | grep -qw l3; }
+is_ready() { [[ -f $RUN_DIR/fault ]]; }   # up이 끝까지 성공했을 때만 생기는 파일
 
 # ------------------------------------------------------------------ check
 cmd_check() {
@@ -78,7 +80,7 @@ cmd_check() {
     say "결과: 부족한 항목이 있습니다."
     say "  - 명령이 없으면: sudo apt update && sudo apt install -y iproute2 dnsmasq-base dnsutils curl iptables tcpdump tshark"
     say "  - 커널 기능이 실패하면 이 환경(예: WSL2 커널)에서는 불가합니다. Mac의 Multipass Ubuntu 같은 일반 Ubuntu VM을 쓰세요."
-    return 1
+    exit 1
   fi
 }
 
@@ -86,19 +88,19 @@ cmd_check() {
 mklink() { # mklink nsA ifA nsB ifB
   local ta="pl${RANDOM}a" tb="pl${RANDOM}b"
   ip link add name "$ta" type veth peer name "$tb"
-  ip link set "$ta" netns "$1"; ip link set "$tb" netns "$3"
-  ip -n "$1" link set "$ta" name "$2"; ip -n "$3" link set "$tb" name "$4"
-  ip -n "$1" link set "$2" up; ip -n "$3" link set "$4" up
+  ip link set dev "$ta" netns "$1"; ip link set dev "$tb" netns "$3"
+  ip -n "$1" link set dev "$ta" name "$2"; ip -n "$3" link set dev "$tb" name "$4"
+  ip -n "$1" link set dev "$2" up; ip -n "$3" link set dev "$4" up
 }
-mkbridge() { ip -n "$1" link add name br0 type bridge vlan_filtering 1 stp_state 0; ip -n "$1" link set br0 up; }
+mkbridge() { ip -n "$1" link add name br0 type bridge vlan_filtering 1 stp_state 0; ip -n "$1" link set dev br0 up; }
 access_port() { # ns port vid
-  ip -n "$1" link set "$2" master br0
+  ip -n "$1" link set dev "$2" master br0
   nsx "$1" bridge vlan del dev "$2" vid 1 2>/dev/null || true
   nsx "$1" bridge vlan add dev "$2" vid "$3" pvid untagged
 }
 trunk_port() { # ns port vid...
   local ns=$1 port=$2; shift 2
-  ip -n "$ns" link set "$port" master br0
+  ip -n "$ns" link set dev "$port" master br0
   nsx "$ns" bridge vlan del dev "$port" vid 1 2>/dev/null || true
   local v; for v in "$@"; do nsx "$ns" bridge vlan add dev "$port" vid "$v"; done
 }
@@ -115,23 +117,23 @@ start_services() {
 
 cmd_up() {
   need_root up
-  is_up && die "이미 실습망이 있습니다. 다시 만들려면 sudo ./lab.sh down 후 up 하세요."
+  is_up && die "이미 실습망이 있습니다(중간에 실패한 것 포함). sudo ./lab.sh down 후 up 하세요."
   mkdir -p "$RUN_DIR"
   local ns h
   for ns in "${ALL_NS[@]}"; do
     ip netns add "$ns"
     nsx "$ns" sysctl -qw net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1 || true
-    ip -n "$ns" link set lo up
+    ip -n "$ns" link set dev lo up
   done
   for ns in "${SWITCHES[@]}"; do mkbridge "$ns"; done
   # 케이블
   mklink pc1 eth0 swa p1; mklink pc3 eth0 swa p2
   mklink pc2 eth0 swb p1; mklink pc4 eth0 swb p2; mklink srv eth0 swb p24
-  mklink swa up l3 ga;    mklink swb up l3 gb
+  mklink swa uplink l3 ga;    mklink swb uplink l3 gb
   # Access / Trunk
   access_port swa p1 10; access_port swa p2 20
   access_port swb p1 10; access_port swb p2 20; access_port swb p24 20
-  trunk_port swa up 10 20; trunk_port swb up 10 20
+  trunk_port swa uplink 10 20; trunk_port swb uplink 10 20
   trunk_port l3 ga 10 20;  trunk_port l3 gb 10 20
   # L3 스위치: 브리지 자신에 VLAN을 허용하고 VLAN 인터페이스(SVI)를 만든다
   nsx l3 bridge vlan add dev br0 vid 10 self
@@ -139,7 +141,7 @@ cmd_up() {
   ip -n l3 link add link br0 name vlan10 type vlan id 10
   ip -n l3 link add link br0 name vlan20 type vlan id 20
   ip -n l3 addr add 192.168.10.1/24 dev vlan10; ip -n l3 addr add 192.168.20.1/24 dev vlan20
-  ip -n l3 link set vlan10 up; ip -n l3 link set vlan20 up
+  ip -n l3 link set dev vlan10 up; ip -n l3 link set dev vlan20 up
   nsx l3 sysctl -qw net.ipv4.ip_forward=1
   # 호스트
   for h in "${HOSTS[@]}"; do
@@ -177,7 +179,7 @@ apply_fault() {
     1) ip -n pc1 route replace default via 192.168.10.254 ;;
     2) nsx swa bridge vlan del dev p1 vid 10; nsx swa bridge vlan add dev p1 vid 20 pvid untagged ;;
     3) nsx l3 bridge vlan del dev gb vid 20 ;;
-    4) ip -n l3 link set vlan10 down ;;
+    4) ip -n l3 link set dev vlan10 down ;;
     5) printf 'nameserver 192.168.20.53\n' > /etc/netns/pc1/resolv.conf ;;
     6) ip -n pc1 addr flush dev eth0; ip -n pc1 addr add 192.168.10.10/16 dev eth0; ip -n pc1 route replace default via 192.168.10.1 ;;
     7) kill "$(cat "$RUN_DIR/http.pid")" ;;
@@ -228,6 +230,7 @@ run_test() {
 cmd_test() {
   need_root test
   is_up || die "실습망이 없습니다. sudo ./lab.sh up 먼저."
+  is_ready || die "실습망이 완성되지 않았습니다 (up이 중간에 실패). sudo ./lab.sh down 후 up 하세요."
   local t=${1:-all}
   if [[ $t == all ]]; then
     local x; for x in ping_pc2 ping_gw ping_pc3 ping_srv dns web; do run_test "$x"; sleep 3; done
