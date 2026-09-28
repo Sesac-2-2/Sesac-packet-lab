@@ -46,11 +46,12 @@
 | `capture_checklist.md` | 추가 | 캡처 전후 체크리스트 |
 | `wireshark_filters.md` | 추가 | 필터·확인 필드·한계 |
 | `data_contract.md` | 추가 | `packet_summary.json` 필드 정의 (3번과 합의용 초안) |
+| `handoff_to_3_ai_engineer.md` | 추가 | 3번에게 전달하는 입력 데이터 안내와 합의 요청 |
 | `packet_summary.example.json` | 추가 | **교육용 예제** (실제 증거 아님) |
 | `summarize_pcap.py` | 추가 | `.pcapng` → `packet_summary.json` 추출·검증 도구 |
 | `tests/` | 추가 | 도구·웹앱 테스트 (합성 데이터는 실행 중에만 생성) |
 | `learning_lab/` | 추가 | 팀원 교육용 인터랙티브 웹앱 |
-| `lab_env/` | 추가 | 실제 `.pcapng`를 얻기 위한 재현 실습망 스크립트 (Linux) |
+| `lab_env/` | 추가 | 실제 `.pcapng`를 얻기 위한 캡처용 재현 실습망 (Linux). 테스트·캡처·관찰만 제공. 토폴로지는 1번 명세 전 임시값, 장애 적용은 4번 담당이라 제외 |
 
 **과제 예시와 다르게 조정한 것 (이유 포함)**
 - 과제 HTML 예시의 `fault_gateway.pcapng`, `fault_vlan.pcapng`처럼 **원인이 드러나는 파일명은 쓰지 않습니다.** 대신 `fault_<case_id>.pcapng`를 씁니다. 과제는 "AI에게 장애 이름을 먼저 알려주지 말 것"을 요구합니다. 파일명도 AI 입력의 일부이기 때문입니다. 과제 HTML도 폴더 구조가 "예시"이며 바꿔도 된다고 밝히고 있습니다.
@@ -195,4 +196,4 @@ python3 -m unittest discover -s tests -v
 | 패킷을 먼저 관찰했는가 | 절차에 반영 (장애 분석은 증상과 캡처부터 시작) |
 | AI에 정답을 먼저 알려주지 않았는가 | 익명 `case_id`, 원인 암시 파일명 금지, 검증기에서 차단 |
 | 내 출력이 다음 담당자의 입력으로 연결되는가 | `data_contract.md` 초안 작성, 3번과 합의 대기 |
-| 역할을 침범한 기능이 없는가 | 설계·AI 진단·장애 주입·복구·Dashboard 구현 없음. 웹앱의 설정 변경은 교육용 모델 안에서만 |
+| 역할을 침범한 기능이 없는가 | AI 진단·장애 주입·복구·Dashboard 구현 없음. 웹앱의 설정 변경은 교육용 모델 안에서만. `lab_env/`의 토폴로지 값은 1번 명세를 받기 전까지의 임시값(`topology.conf`)이며 1번 명세로 교체 예정 |

@@ -1,10 +1,15 @@
-# lab_env — 재현 실습망 (Linux network namespace)
+# lab_env — 캡처용 재현 실습망 (Linux network namespace)
 
 > **왜 필요한가**
 > Packet Tracer 9.0.1.0858에는 Simulation 결과를 `.pcap`/`.pcapng`로 저장하는 메뉴가 없습니다(직접 확인함). 또 내 PC에서 Wireshark로 캡처하면 Packet Tracer 안의 가상 트래픽은 잡히지 않습니다.
 > 그래서 과제와 같은 구조의 네트워크를 **Linux 안에 따로 만들어** 실제 패킷을 캡처합니다.
 >
 > **반드시 기록할 것**: 이 환경의 패킷은 "별도 Linux 환경에서 재현한 트래픽"입니다. Packet Tracer 내부 트래픽이라고 부르지 않습니다.
+>
+> **역할 경계**
+> - 이 도구는 2번의 일(테스트 실행, 캡처, 상태 관찰)만 합니다.
+> - 네트워크 설계는 **1번** 담당입니다. 토폴로지 값은 `topology.conf`에 따로 두었고, 지금 값은 과제 HTML 기준 **임시값**입니다. 1번의 `network_spec.md`를 받으면 그 값으로 바꿉니다.
+> - 장애 적용과 복구는 **4번** 담당이라 이 도구에 넣지 않았습니다. 4번이 이 환경에 장애를 어떻게 적용할지는 팀이 정합니다.
 
 ---
 
@@ -31,7 +36,7 @@
 | DNS 서버 | `dnsmasq` (`web.packetlab.example` → 192.168.20.100) | |
 | Web 서버 | `python3 -m http.server 80` | |
 
-- 주소는 과제 HTML의 기준값(VLAN 10/20, Gateway .1)입니다. 1번의 `network_spec.md`를 받으면 스크립트 맨 위의 주소를 그 값으로 바꿉니다.
+- 주소·VLAN·포트 배치는 `topology.conf`에서 읽습니다. 지금 값은 과제 HTML의 기준값(VLAN 10/20, Gateway .1)으로 정한 **임시값**입니다. 1번의 `network_spec.md`를 받으면 이 파일만 바꿉니다. `lab.sh`는 고치지 않아도 됩니다.
 - 모든 장비는 namespace 안에만 만듭니다. VM이나 WSL의 원래 네트워크 설정은 바꾸지 않습니다. `down`으로 전부 지워집니다.
 - IPv6는 namespace 안에서 끕니다. 캡처에 과제와 무관한 IPv6 패킷이 섞이지 않게 하기 위해서입니다.
 
@@ -52,7 +57,7 @@ WSL 버전 확인은 **Windows PowerShell**에서 합니다(Ubuntu 안에서는 
 
 ```bash
 sudo apt update
-sudo apt install -y iproute2 dnsmasq-base dnsutils curl iptables tcpdump tshark python3
+sudo apt install -y iproute2 dnsmasq-base dnsutils curl tcpdump tshark python3
 # tshark 설치 중 "non-superuser capture" 질문이 나오면 아무거나 골라도 됩니다 (이 스크립트는 sudo로 캡처).
 git clone -b feat/2nd-part https://github.com/Sesac-2-2/Sesac-packet-lab.git
 cd Sesac-packet-lab/02_packet_capture/lab_env
@@ -62,69 +67,53 @@ sudo ./lab.sh check
 
 `check` 결과가 "이 환경에서 실습망을 만들 수 있습니다"면 준비가 끝났습니다.
 
-## 4. 정상 → 장애 → 비교 → JSON (한 바퀴)
+## 4. 캡처 순서 (정상 → 장애 → 복구)
 
 ```bash
 cd Sesac-packet-lab/02_packet_capture/lab_env
-export OUT_DIR=..                       # 캡처 파일을 02_packet_capture/에 저장
+export OUT_DIR=..                       # 캡처 파일을 02_packet_capture/에 저장 (sudo -E로 넘김)
 
-# 1) 정상 Baseline
-sudo ./lab.sh up
-sudo ./lab.sh capture start pc1 normal.pcapng
+# 1) 정상 Baseline — up 직후는 모든 ARP 캐시가 비어 있음
+sudo ./lab.sh down; sudo ./lab.sh up
+sudo -E ./lab.sh capture start pc1 normal.pcapng
+sudo -E ./lab.sh capture start srv normal_srv.pcapng     # 필요하면 다른 지점도 동시에
 sudo ./lab.sh test all                  # 각 테스트 시작·끝 시각이 출력됨 → 기록
 sudo ./lab.sh capture stop all
 
-# 2) 장애 (아래 5절: 누가 장애를 적용할지 먼저 정함)
-sudo ./lab.sh fault random              # 자기 연습용. 팀 사례는 4번이 적용
-sudo ./lab.sh capture start pc1 fault_<case_id>.pcapng
+# 2) 장애 — 4번이 장애를 적용한 뒤 (방법은 팀 합의). 2번은 원인을 모르는 상태로 같은 순서를 반복
+sudo ./lab.sh flush                     # 정상 캡처와 캐시 조건을 맞춤
+sudo -E ./lab.sh capture start pc1 fault_<case_id>.pcapng
 sudo ./lab.sh test all
 sudo ./lab.sh capture stop all
 
-# 3) 필요하면 다른 지점도 동시에 캡처 (지점 목록: sudo ./lab.sh capture list)
-#    예: sudo ./lab.sh capture start pc3 fault_<case_id>_pc3.pcapng
-
-# 4) JSON 만들기 (Linux에서 바로 가능. tshark 설치됨)
+# 3) JSON 만들기 (Linux에서 바로 가능. tshark 설치됨)
 cd ..
 python3 summarize_pcap.py extract fault_<case_id>.pcapng --case-id <case_id> \
   --source-ip 192.168.10.10 --destination-ip 192.168.20.100 --next-hop 192.168.10.1 \
-  --capture-point "PC1 NIC (재현 실습망 pc1 eth0, SW-A p1 Access VLAN 10)" \
+  --capture-point "PC1 NIC (재현 실습망 pc1 eth0, swa p1 Access VLAN 10)" \
   --test-description "<시각> ping -c 4 192.168.20.100" --start <초> --end <초> \
   --limitation "별도 Linux 재현 환경(network namespace)에서 캡처. Packet Tracer 내부 트래픽 아님" \
   -o packet_summary.json
 
-# 5) 복구 후
-sudo ./lab.sh fault clear
-sudo ./lab.sh capture start pc1 recovered_<case_id>.pcapng
+# 4) 복구 후 — 4번이 복구한 뒤 같은 순서 반복
+sudo ./lab.sh flush
+sudo -E ./lab.sh capture start pc1 recovered_<case_id>.pcapng
 sudo ./lab.sh test all
 sudo ./lab.sh capture stop all
 ```
 
-- `fault <번호>`, `fault random`, `fault clear`는 실습망을 **새로 만든 뒤** 적용합니다. 그래서 장애는 항상 하나만 걸려 있고, ARP 캐시는 비어 있습니다. 정상·장애·복구의 캐시 조건이 같아집니다.
-- 테스트 사이에 캐시를 비우려면 `sudo ./lab.sh flush`를 씁니다.
+- 정상·장애·복구의 캐시 조건을 같게 하려고 매번 `flush`로 ARP 캐시를 비웁니다.
+- 캡처 지점 목록: `sudo ./lab.sh capture list`
 
 **캡처 파일을 Windows에서 열기**
 - WSL2: 파일 탐색기 주소창에 `\\wsl$\Ubuntu\home\<사용자>\Sesac-packet-lab\02_packet_capture`를 입력하거나, WSL에서 `explorer.exe .`을 실행합니다.
-- Multipass (Mac): `multipass list`로 VM 이름을 확인한 뒤 `multipass transfer <VM_NAME>:/home/ubuntu/Sesac-packet-lab/02_packet_capture/normal.pcapng .`로 가져옵니다. Mac에 Wireshark를 설치해 열어도 됩니다.
+- Multipass (Mac): `multipass list`로 VM 이름을 확인한 뒤 `multipass transfer <VM_NAME>:/home/ubuntu/Sesac-packet-lab/02_packet_capture/normal.pcapng .`로 가져옵니다.
 
-## 5. 장애 목록과 역할 경계
+## 5. 장애 적용 (4번 담당 — 이 도구에 없음)
 
-`sudo ./lab.sh fault list`
-
-| 번호 | 바꾸는 것 | 과제의 장애 유형 |
-|---|---|---|
-| 1 | PC1 Default Gateway = 192.168.10.254 | Default Gateway 오류 |
-| 2 | SW-A p1(PC1 포트) Access VLAN = 20 | 잘못된 VLAN 할당 |
-| 3 | L3SW↔SW-B Trunk에서 VLAN 20 제거 | Trunk에서 특정 VLAN 누락 |
-| 4 | L3SW SVI vlan10 down | SVI Down |
-| 5 | PC1 DNS 서버 = 192.168.20.53 | DNS Server 설정 오류 |
-| 6 | PC1 Subnet Mask = /16 | Subnet Mask 오류 |
-| 7 | Server Web 서비스 중지 (TCP 80 → RST) | Server TCP Port 서비스 중단 |
-| 8 | Server TCP 80 패킷 폐기 (응답 없음) | Server TCP Port 서비스 중단 (다른 모습) |
-| 9 | Server DNS 서비스 중지 | DNS 오류 (서버 쪽) |
-
-- 이 번호는 **이 재현 환경의 스위치 번호**입니다. 팀의 `case_id`와 연결된 정답 목록이 아닙니다.
-- **팀의 실제 장애 사례는 4번(SRE)이 정합니다.** Blind 분석을 지키려면 원인을 아는 사람(4번)이 이 환경에 장애를 적용해야 합니다. 방법은 팀과 정해야 합니다. 예를 들어 4번이 직접 `fault <번호>`를 실행하거나, 번호를 봉인해서 전달하는 방식이 있습니다.
-- `fault random`은 자기 연습용입니다. 답이 같은 기기(`/run/packetlab/.blind_answer`)에 저장되므로 완전한 Blind가 아닙니다.
+- 장애를 적용하고 복구하는 기능은 이 도구에 없습니다. 4번(SRE)의 역할이기 때문입니다.
+- Blind 분석을 지키려면 원인을 아는 사람(4번)이 장애를 적용하고, 2번은 `case_id`와 증상만 받아 캡처합니다.
+- 4번이 이 재현 환경을 쓸지, 쓴다면 어떻게 적용할지는 팀이 정합니다. 결정되면 이 절에 적습니다.
 
 ## 6. 상태 확인 — Cisco IOS 명령과의 대응
 
@@ -147,4 +136,5 @@ sudo ./lab.sh capture stop all
 - STP, EtherChannel, 포트 보안 등은 만들지 않았습니다(과제 분석 대상 아님).
 - 실행 검증 (2026-09-28, Windows 11 WSL2 Ubuntu): `check` 전 항목 OK, `up` 성공, `test all` 6종 모두 정상
   (ping 4/4 ×4, 같은 VLAN TTL 64 / 다른 VLAN TTL 63, DNS NOERROR A=192.168.20.100, HTTP 200). `status`의 VLAN·Trunk·SVI 구성도 설계와 같음.
-- 장애 1~9번(`fault`)과 캡처(`capture`)는 아직 실제로 실행해 보지 않았습니다. 처음 쓸 때 결과를 확인합니다.
+- `capture`는 아직 실제로 실행해 보지 않았습니다. 처음 쓸 때 결과를 확인합니다.
+- 위 검증 이후 `topology.conf` 분리와 장애 기능 삭제로 스크립트를 다시 작성했습니다. 새 버전은 `bash -n`, `shellcheck`만 통과했고 **WSL2 실행은 다시 확인해야 합니다.**
