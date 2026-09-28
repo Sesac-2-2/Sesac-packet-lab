@@ -1,0 +1,170 @@
+{
+  "case_id": "EDU-BASELINE-01",
+  "source_ip": "192.168.10.10",
+  "destination_ip": "192.168.20.20",
+  "arp_request_count": 1,
+  "arp_reply_count": 1,
+  "icmp_request_count": 4,
+  "icmp_reply_count": 4,
+  "dns_query_count": 3,
+  "tcp_syn_count": 1,
+  "notes": "관찰 구간 집계: ARP Request 1 / Reply 1, ICMP Echo Request 4 / Reply 4, DNS Query 3 / Response 3, TCP SYN 1 / SYN-ACK 1 / RST 0. 추가 관찰: DNS 오류 응답 rcode=5 (프레임 46)",
+  "schema_version": "0.1-draft",
+  "capture_file": "normal.pcapng",
+  "evidence_source": "wireshark_capture",
+  "capture_point": "PC1 NIC (SW-A Fa0/1 access port)",
+  "test_description": "ping -n 4 192.168.20.20 (Baseline, lab_env 재현 환경)",
+  "analysis_scope": {
+    "time_window": {
+      "start": "2026-09-28T17:50:57.205+09:00",
+      "end": "2026-09-28T17:51:24.538+09:00",
+      "relative_seconds": [
+        null,
+        null
+      ]
+    },
+    "display_filter": "(전체 프레임 읽은 뒤 field_filters 기준으로 집계)",
+    "target_flow": "192.168.10.10 → 192.168.20.20",
+    "arp_targets": [
+      "192.168.20.20",
+      "192.168.10.1"
+    ],
+    "count_basis": {
+      "unit": "packets",
+      "retransmissions_included": true
+    },
+    "field_filters": {
+      "arp_request_count": "arp.opcode == 1 && arp.src.proto_ipv4 == 192.168.10.10 && (arp.dst.proto_ipv4 == 192.168.20.20 || arp.dst.proto_ipv4 == 192.168.10.1)",
+      "arp_reply_count": "arp.opcode == 2 && arp.dst.proto_ipv4 == 192.168.10.10 && (arp.src.proto_ipv4 == 192.168.20.20 || arp.src.proto_ipv4 == 192.168.10.1)",
+      "icmp_request_count": "icmp.type == 8 && ip.src == 192.168.10.10 && ip.dst == 192.168.20.20",
+      "icmp_reply_count": "icmp.type == 0 && ip.src == 192.168.20.20 && ip.dst == 192.168.10.10",
+      "dns_query_count": "dns.flags.response == 0 && ip.src == 192.168.10.10",
+      "dns_response_count": "dns.flags.response == 1 && ip.dst == 192.168.10.10",
+      "tcp_syn_count": "tcp.flags.syn == 1 && tcp.flags.ack == 0 && ip.src == 192.168.10.10 && ip.dst == 192.168.20.20",
+      "tcp_syn_ack_count": "tcp.flags.syn == 1 && tcp.flags.ack == 1 && ip.src == 192.168.20.20 && ip.dst == 192.168.10.10",
+      "tcp_rst_count": "tcp.flags.reset == 1 && ip.src == 192.168.20.20 && ip.dst == 192.168.10.10"
+    }
+  },
+  "dns_response_count": 3,
+  "tcp_syn_ack_count": 1,
+  "tcp_rst_count": 0,
+  "evidence": [
+    {
+      "ref_type": "frame",
+      "frame_number": 13,
+      "time": "2026-09-28T17:51:03.279+09:00",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.1? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 14,
+      "time": "2026-09-28T17:51:03.279+09:00",
+      "protocol": "ARP",
+      "observation": "192.168.10.1 is at (ARP Reply)"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 33,
+      "time": "2026-09-28T17:51:15.439+09:00",
+      "protocol": "ICMP",
+      "observation": "Echo Request 192.168.10.10 → 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 34,
+      "time": "2026-09-28T17:51:15.439+09:00",
+      "protocol": "ICMP",
+      "observation": "Echo Reply 192.168.20.20 → 192.168.10.10"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 35,
+      "time": "2026-09-28T17:51:16.455+09:00",
+      "protocol": "ICMP",
+      "observation": "Echo Request 192.168.10.10 → 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 36,
+      "time": "2026-09-28T17:51:16.455+09:00",
+      "protocol": "ICMP",
+      "observation": "Echo Reply 192.168.20.20 → 192.168.10.10"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 37,
+      "time": "2026-09-28T17:51:17.479+09:00",
+      "protocol": "ICMP",
+      "observation": "Echo Request 192.168.10.10 → 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 38,
+      "time": "2026-09-28T17:51:17.479+09:00",
+      "protocol": "ICMP",
+      "observation": "Echo Reply 192.168.20.20 → 192.168.10.10"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 41,
+      "time": "2026-09-28T17:51:21.525+09:00",
+      "protocol": "DNS",
+      "observation": "DNS Query web.packetlab.example → 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 42,
+      "time": "2026-09-28T17:51:21.525+09:00",
+      "protocol": "DNS",
+      "observation": "DNS Response web.packetlab.example rcode=0 A=192.168.20.20 from 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 43,
+      "time": "2026-09-28T17:51:24.536+09:00",
+      "protocol": "DNS",
+      "observation": "DNS Query web.packetlab.example → 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 44,
+      "time": "2026-09-28T17:51:24.536+09:00",
+      "protocol": "DNS",
+      "observation": "DNS Query web.packetlab.example → 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 45,
+      "time": "2026-09-28T17:51:24.537+09:00",
+      "protocol": "DNS",
+      "observation": "DNS Response web.packetlab.example rcode=0 A=192.168.20.20 from 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 46,
+      "time": "2026-09-28T17:51:24.537+09:00",
+      "protocol": "DNS",
+      "observation": "DNS Response web.packetlab.example rcode=5 A=없음 from 192.168.20.20"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 47,
+      "time": "2026-09-28T17:51:24.537+09:00",
+      "protocol": "TCP",
+      "observation": "SYN 192.168.10.10:48260 → 192.168.20.20:80"
+    },
+    {
+      "ref_type": "frame",
+      "frame_number": 48,
+      "time": "2026-09-28T17:51:24.537+09:00",
+      "protocol": "TCP",
+      "observation": "SYN-ACK 192.168.20.20:80 → 192.168.10.10"
+    }
+  ],
+  "limitations": [
+    "단일 캡처 지점(PC1 NIC (SW-A Fa0/1 access port))의 관찰이다. 다른 지점에서 패킷이 도달했는지는 이 파일만으로 알 수 없다.",
+    "count 0은 이 지점·이 구간에서 보이지 않았다는 뜻이며, 응답이 존재하지 않았다는 뜻은 아니다."
+  ],
+  "null_reasons": {}
+}

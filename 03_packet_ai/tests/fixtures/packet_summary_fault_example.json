@@ -1,0 +1,85 @@
+{
+  "case_id": "EDU-EX-04",
+  "source_ip": "192.168.10.10",
+  "destination_ip": "192.168.20.20",
+  "arp_request_count": 1,
+  "arp_reply_count": 1,
+  "icmp_request_count": 0,
+  "icmp_reply_count": 0,
+  "dns_query_count": 1,
+  "tcp_syn_count": 1,
+  "notes": "[교육용 예제] 관찰 구간 집계: ARP Request 1 / Reply 1, ICMP Echo Request 0 / Reply 0, DNS Query 1 / Response 1, TCP SYN 1 / SYN-ACK 0 / RST 1",
+  "schema_version": "0.1-draft",
+  "capture_file": null,
+  "evidence_source": "example",
+  "capture_point": "PC1 NIC (SW-A Fa0/1) — 교육용 모델",
+  "test_description": "[교육용] http://web.packetlab.example/ (교육용 예제 주소, 설계 Gateway 192.168.10.1)",
+  "analysis_scope": {
+    "time_window": {
+      "start": "EXAMPLE+0.000s",
+      "end": "EXAMPLE+0.021s"
+    },
+    "display_filter": "arp || icmp || dns || tcp",
+    "target_flow": "192.168.10.10 → 192.168.20.20",
+    "arp_targets": [
+      "192.168.20.20",
+      "192.168.10.1"
+    ],
+    "count_basis": {
+      "unit": "packets",
+      "retransmissions_included": true
+    }
+  },
+  "dns_response_count": 1,
+  "tcp_syn_ack_count": 0,
+  "tcp_rst_count": 1,
+  "evidence": [
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-1",
+      "time": "EXAMPLE+0.001s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.1? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-2",
+      "time": "EXAMPLE+0.002s",
+      "protocol": "ARP",
+      "observation": "192.168.10.1 is at 00:d0:bc:00:00:0a"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-3",
+      "time": "EXAMPLE+0.003s",
+      "protocol": "DNS",
+      "observation": "Standard query 0x1a2b A web.packetlab.example"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-8",
+      "time": "EXAMPLE+0.008s",
+      "protocol": "DNS",
+      "observation": "Standard query response 0x1a2b A web.packetlab.example A 192.168.20.20"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-9",
+      "time": "EXAMPLE+0.018s",
+      "protocol": "TCP",
+      "observation": "49152 → 80 [SYN] Seq=0"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-12",
+      "time": "EXAMPLE+0.021s",
+      "protocol": "TCP",
+      "observation": "80 → 49152 [RST, ACK] Seq=1 Ack=1"
+    }
+  ],
+  "limitations": [
+    "[교육용] 교육용 모델이 만든 값이며 실제 캡처가 아님",
+    "단일 캡처 지점(PC1 NIC)의 관찰"
+  ],
+  "null_reasons": {}
+}

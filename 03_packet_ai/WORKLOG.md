@@ -45,9 +45,23 @@ python analyzer.py tests/fixtures/packet_summary.example.json -o /tmp/diagnosis.
 첫 실패 계층에 집중한다" 규칙을 명시해 해결. 재검증 결과 DNS 무응답 사례에서 DNS 계층
 내부 가설로만 좁혀짐.
 
+## 1→2→3 파이프라인 실제 데이터 검증 (2026-09-28)
+
+2번의 실제 캡처(`normal.pcapng`)를 `summarize_pcap.py extract`로 직접 처리해
+`tests/fixtures/packet_summary_baseline.json`을 만들었다 (`evidence_source:
+wireshark_capture`, 교육용 예제 아님). `validate` 통과, `packet_analysis.md`에
+사람이 수동 검증한 집계값과 완전히 일치함을 확인했다. `analyzer.py`에 넣으면
+`is_example: false`, 정상 판정(hypothesis 없음, root_cause: null)이 정확히 나온다.
+
+실제 장애(fault) 캡처는 4번이 아직 case_id를 주지 않아 존재하지 않으므로,
+2번의 교육용 예제 `examples/tcp_rst.json`을 `tests/fixtures/
+packet_summary_fault_example.json`으로 복사해 fault 경로를 검증했다. 결과는
+`evidence_source: example`, TCP/Application 계층, high 확신도로 정확히 나옴 —
+`is_example` 플래그 덕분에 이 결과를 실제 진단 근거로 오인할 위험이 없음을 확인.
+
 ## 아직 안 한 것
 
-- [ ] 실제 `packet_summary.json`으로 검증 (2번의 실제 캡처 대기 중 — baseline은 나왔으나
-      장애 사례는 아직)
+- [ ] 실제 장애 `packet_summary.json`으로 검증 (4번의 case_id·실제 캡처 대기 중 —
+      baseline은 실제 데이터로 검증 완료, fault는 예제로만 검증됨)
 - [ ] `ai_report.html` (HTML 리포트 생성) — 필요 시점에 판단
 - [ ] 4번(Network SRE) 착수 — 보류 중
