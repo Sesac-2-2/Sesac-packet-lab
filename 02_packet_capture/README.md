@@ -50,6 +50,7 @@
 | `summarize_pcap.py` | 추가 | `.pcapng` → `packet_summary.json` 추출·검증 도구 |
 | `tests/` | 추가 | 도구·웹앱 테스트 (합성 데이터는 실행 중에만 생성) |
 | `learning_lab/` | 추가 | 팀원 교육용 인터랙티브 웹앱 |
+| `lab_env/` | 추가 | 실제 `.pcapng`를 얻기 위한 재현 실습망 스크립트 (Linux) |
 
 **과제 예시와 다르게 조정한 것 (이유 포함)**
 - 과제 HTML 예시의 `fault_gateway.pcapng`, `fault_vlan.pcapng`처럼 **원인이 드러나는 파일명은 쓰지 않습니다.** 대신 `fault_<case_id>.pcapng`를 씁니다. 과제는 "AI에게 장애 이름을 먼저 알려주지 말 것"을 요구합니다. 파일명도 AI 입력의 일부이기 때문입니다. 과제 HTML도 폴더 구조가 "예시"이며 바꿔도 된다고 밝히고 있습니다.
@@ -69,7 +70,8 @@
        --start <초> --end <초> -o packet_summary.json
    python3 summarize_pcap.py validate packet_summary.json
    ```
-   - **Windows 11**: `python3` 대신 `py`를 씁니다. PowerShell에서 여러 줄로 나눌 때는 `\` 대신 줄 끝에 `` ` ``(백틱)을 씁니다. `tshark`가 PATH에 없어도 `C:\Program Files\Wireshark\tshark.exe`를 자동으로 찾습니다.
+   - **Windows 11**: `python3` 대신 `py`를 씁니다. PowerShell에서 여러 줄로 나눌 때는 `\` 대신 줄 끝에 `` ` ``(백틱)을 씁니다. `tshark`가 PATH에 없어도 Windows 설치 정보에서 Wireshark 위치(예: `E:\Program\Wireshark`)를 찾아 씁니다. 못 찾으면 `--tshark "E:\Program\Wireshark\tshark.exe"`로 지정합니다.
+   - 재현 실습망(Linux)에서 캡처했다면 Linux 안에서 바로 실행해도 됩니다(`tshark` 설치됨).
    - `--start/--end`는 캡처 시작 기준 초입니다(Wireshark의 Time 열). 테스트한 구간만 셉니다.
    - 저장하지 않은 프로토콜이 있으면 `--not-collected dns_query_count="capture filter가 icmp만 저장"`처럼 null과 이유로 남깁니다.
 6. **수동 검증** — `python3 summarize_pcap.py filters --source-ip ... --destination-ip ... --next-hop ...`가 각 숫자의 display filter를 출력합니다. Wireshark에 같은 필터를 넣고, 같은 시간 구간에서 아래 상태줄의 "Displayed" 개수가 JSON 값과 같은지 확인합니다. 결과는 `packet_analysis.md`의 "집계 검증" 칸에 적습니다.
@@ -79,8 +81,12 @@
 ## 4. Packet Tracer 관찰과 Wireshark 캡처는 다른 증거다
 
 - Packet Tracer의 **Simulation 모드 이벤트**는 시뮬레이터가 보여 주는 재현입니다. Wireshark `.pcapng`와 같은 파일이 아닙니다.
-- `.pkt` 파일이나 Simulation 결과를 `.pcapng`로 바로 바꿀 수 있다고 **가정하지 않습니다.** 사용 버전은 **Packet Tracer 9.0.1.0858**입니다. 이 버전에서 Simulation 결과를 `.pcap`/`.pcapng`로 저장하는 메뉴가 있는지는 **아직 확인하지 못했습니다.** (공식 문서에서도 확인하지 못함) 직접 확인되면 메뉴 위치와 결과 파일 형식을 여기에 적습니다.
-- **내 PC(Windows 11)에서 Wireshark로 캡처하면 내 PC의 실제 NIC를 지나는 패킷만 잡힙니다.** Packet Tracer 안의 가상 PC·스위치 사이 트래픽은 내 PC의 NIC를 지나지 않으므로 Wireshark에 나타나지 않습니다. 실제 `.pcapng`를 만들려면 Packet Tracer의 내보내기 기능이 확인되거나, 내 PC 안에 별도의 실습 환경(VM 등)을 만들어 재현해야 합니다. 어느 쪽인지 정해지면 이 절에 적습니다.
+- 사용 버전 **Packet Tracer 9.0.1.0858에는 Simulation 결과를 `.pcap`/`.pcapng`로 저장하는 메뉴가 없습니다** (직접 확인).
+- **내 PC(Windows 11)에서 Wireshark로 캡처하면 내 PC의 실제 NIC를 지나는 패킷만 잡힙니다.** Packet Tracer 안의 가상 트래픽은 잡히지 않습니다.
+- 그래서 실제 `.pcapng`는 **`lab_env/`의 재현 실습망**(Linux network namespace로 만든 같은 구조의 네트워크)에서 캡처합니다. 실행 위치는 Windows의 WSL2, 또는 Mac의 Multipass Ubuntu입니다. 자세한 방법은 `lab_env/README.md`에 있습니다.
+- 따라서 증거는 두 종류가 됩니다. 섞지 않고 각각 출처를 적습니다.
+  - Packet Tracer Simulation 관찰 → `evidence_source: "packet_tracer_simulation"`, `event_id`로 기록
+  - 재현 실습망 캡처 → `evidence_source: "wireshark_capture"`, `limitations`에 "별도 Linux 재현 환경, Packet Tracer 내부 트래픽 아님"을 적음
 - Packet Tracer 증거는 `evidence_source: "packet_tracer_simulation"`으로 적습니다. 프레임 번호 대신 Event List의 이벤트 식별자를 `event_id`로 씁니다.
 - 실제 `.pcapng`는 **허가된 별도 실습 환경**(실제 PC·VM)에서 확보합니다. 그 환경의 패킷을 "Packet Tracer 내부 트래픽"이라고 부르지 않습니다. 두 환경의 구조가 다르면 차이와 재현 가능한 범위를 `packet_analysis.md`에 적습니다.
 
@@ -109,9 +115,9 @@
 | 항목 | 값 |
 |---|---|
 | 실습 OS와 버전 | Windows 11 (최신 업데이트) ✅ |
-| Wireshark | 설치됨 ✅ / 정확한 버전 `<WIRESHARK_VERSION>` (`tshark --version`으로 확인) |
-| Packet Tracer 버전 | 9.0.1.0858 ✅ / pcap 내보내기 지원 여부 ⏳ 확인 필요 |
-| 캡처 호스트 | 내 PC ✅ / 캡처 인터페이스 `<INTERFACE>` / 트래픽을 만드는 환경 ⏳ (4절 참고) |
+| Wireshark | 4.6.8 x64, 설치 위치 `E:\Program\Wireshark` ✅ (`tshark.exe` 포함 여부 ⏳ 확인 필요) |
+| Packet Tracer 버전 | 9.0.1.0858 ✅ / pcap 내보내기 메뉴 없음 ✅ |
+| 캡처 환경 | `lab_env/` 재현 실습망 — WSL2에서 `check` 통과 여부 ⏳, 실패 시 Mac(Apple Silicon)의 Multipass Ubuntu |
 | 서버 IP / DNS IP / 도메인 / 포트 | `<SERVER_IP>` / `<DNS_IP>` / `<DOMAIN>` / `<WEB_PORT>` ⏳ 1번 작업 완료 후 |
 | 익명 장애 사례 형식 | ⏳ 4번 작업 완료 후 |
 | JSON 필드 합의 | ⏳ 3번 작업 완료 후 |

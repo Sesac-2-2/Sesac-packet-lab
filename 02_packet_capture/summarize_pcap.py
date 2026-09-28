@@ -24,7 +24,8 @@
 
 Windows 11
   - python3 대신 py 를 쓴다:  py summarize_pcap.py extract ...
-  - tshark가 PATH에 없어도 C:\\Program Files\\Wireshark\\tshark.exe 를 자동으로 찾는다.
+  - tshark가 PATH에 없어도 Windows 설치 정보(레지스트리)의 Wireshark 설치 위치와
+    C:\\Program Files\\Wireshark 를 차례로 찾는다. 그래도 못 찾으면 --tshark 로 경로를 준다.
   - PowerShell에서 줄을 나눌 때는 \\ 대신 ` (백틱)을 쓴다.
 """
 from __future__ import annotations
@@ -340,14 +341,38 @@ def build_notes(c: dict, extra: list[str], example: bool) -> str:
 WINDOWS_TSHARK = [r"C:\Program Files\Wireshark\tshark.exe", r"C:\Program Files (x86)\Wireshark\tshark.exe"]
 
 
+def _windows_registry_tshark() -> list[str]:
+    """Windows 설치 정보(레지스트리)의 Wireshark InstallLocation에서 tshark.exe 후보를 찾는다.
+    예: Wireshark를 E:\\Program\\Wireshark 처럼 기본 위치가 아닌 곳에 설치한 경우."""
+    try:
+        import winreg  # Windows 전용
+    except ImportError:
+        return []
+    found = []
+    for sub in (r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+                r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"):
+        try:
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, sub)
+        except OSError:
+            continue
+        for i in range(winreg.QueryInfoKey(key)[0]):
+            try:
+                sk = winreg.OpenKey(key, winreg.EnumKey(key, i))
+                if "wireshark" in str(winreg.QueryValueEx(sk, "DisplayName")[0]).lower():
+                    found.append(os.path.join(winreg.QueryValueEx(sk, "InstallLocation")[0], "tshark.exe"))
+            except OSError:
+                continue
+    return found
+
+
 def find_tshark(explicit: str | None) -> str | None:
-    """--tshark > PATH > Windows 기본 설치 경로 순서로 찾는다."""
+    """--tshark > PATH > Windows 설치 정보(레지스트리) > Windows 기본 설치 경로 순서로 찾는다."""
     if explicit:
         return explicit if (os.path.isfile(explicit) or shutil.which(explicit)) else None
     found = shutil.which("tshark")
     if found:
         return found
-    for cand in WINDOWS_TSHARK:
+    for cand in _windows_registry_tshark() + WINDOWS_TSHARK:
         if os.path.isfile(cand):
             return cand
     return None
@@ -494,7 +519,7 @@ def main(argv=None) -> int:
                    help="수집·분석하지 않은 count를 null로 표시 (예: dns_query_count=capture filter가 icmp만 저장)")
     e.add_argument("--limitation", action="append", default=[], help="추가 한계 문장")
     e.add_argument("--max-evidence", type=int, default=3, help="유형별 evidence 최대 개수 (기본 3)")
-    e.add_argument("--tshark", help="tshark 실행 파일 경로")
+    e.add_argument("--tshark", help='tshark 실행 파일 경로 (예: "E:\\Program\\Wireshark\\tshark.exe")')
     e.add_argument("-o", "--output", help="저장 경로 (없으면 표준출력)")
     e.add_argument("--force", action="store_true", help="기존 출력 파일 덮어쓰기 허용")
     e.set_defaults(func=cmd_extract)
