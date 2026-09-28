@@ -214,6 +214,23 @@ test('예제 JSON의 count는 교육용 모델의 집계와 일치한다 (값을
   Object.keys(c).forEach((k) => assert.strictEqual(raw[k], c[k], k));
 });
 
+test('examples/*.json은 모두 유효한 교육용 예제이고 count가 모델 집계와 같다', () => {
+  const dir = path.join(__dirname, '..', 'examples');
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
+  assert.ok(files.length >= 4);
+  files.forEach((f) => {
+    const o = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+    assert.ok(S.validate(o).valid, f);
+    assert.strictEqual(o.evidence_source, 'example', f);
+  });
+  const rst = JSON.parse(fs.readFileSync(path.join(dir, 'tcp_rst.json'), 'utf8'));
+  assert.deepStrictEqual([rst.tcp_syn_count, rst.tcp_syn_ack_count, rst.tcp_rst_count], [1, 0, 1]);
+  const dns = JSON.parse(fs.readFileSync(path.join(dir, 'dns_no_response.json'), 'utf8'));
+  assert.ok(dns.dns_query_count > 0 && dns.dns_response_count === 0);
+  const lim = JSON.parse(fs.readFileSync(path.join(dir, 'limited_capture_nulls.json'), 'utf8'));
+  assert.strictEqual(lim.dns_query_count, null); assert.ok(lim.null_reasons.dns_query_count);
+});
+
 // ---------------------------------------------------------------- 콘텐츠·보안
 test('예측 질문의 정답이 보기 안에 있고, 비교 사례는 기본·대체 지점 중 한 곳에서 차이를 보인다', () => {
   Object.values(C.LESSONS).forEach((l) => assert.ok(l.predict.options.some((o) => o[0] === l.predict.answer), l.id));

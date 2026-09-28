@@ -126,3 +126,14 @@
 | `02_packet_capture/packet_summary.example.json` | 교육용 예제 (`evidence_source: "example"`) |
 | `02_packet_capture/summarize_pcap.py validate <파일>` | JSON이 계약을 지키는지 검사하는 명령. 3번 쪽에서도 입력 검사에 쓸 수 있음 |
 | `02_packet_capture/packet_summary.json` | ⏳ 실제 분석 후 생성 |
+
+## 10. 3번 답변 반영 (2026-09-28)
+
+| 항목 | 결과 |
+|---|---|
+| 추가 필드 | 전부 사용 ✅ |
+| null | "모름"으로 유지, 0으로 치환하지 않음 ✅ |
+| 여러 사례 | 3번 제안: (A) 사례별 파일 `packet_summary_<case_id>.json`. 과제 HTML의 파일명 `packet_summary.json`과의 관계는 ⏳ 팀 확인 중 |
+| 기존 `ai_packet_assistant` | 패킷 1개 단위 설명용이라 이 계약과 충돌 없음 ✅ |
+| 추가 예제 4종 | `02_packet_capture/examples/`에 추가 ✅ (정상, DNS 무응답, TCP RST, null 섞인 제한적 캡처) |
+| EDU-EX-01의 `.254` | 설계 Gateway가 아니라 "Gateway 오설정 장애"에서 PC가 찾은 **관찰값**. 설계 Gateway는 `.1` (자세한 설명: `examples/README.md`) |

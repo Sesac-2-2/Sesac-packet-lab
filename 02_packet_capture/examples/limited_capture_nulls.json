@@ -1,0 +1,92 @@
+{
+  "case_id": "EDU-EX-05",
+  "source_ip": "192.168.10.10",
+  "destination_ip": "192.168.20.100",
+  "arp_request_count": 1,
+  "arp_reply_count": 1,
+  "icmp_request_count": 4,
+  "icmp_reply_count": 0,
+  "dns_query_count": null,
+  "tcp_syn_count": null,
+  "notes": "[교육용 예제] 관찰 구간 집계: ARP Request 1 / Reply 1, ICMP Echo Request 4 / Reply 0, DNS Query 미수집 / Response 미수집, TCP SYN 미수집 / SYN-ACK 미수집 / RST 미수집",
+  "schema_version": "0.1-draft",
+  "capture_file": null,
+  "evidence_source": "example",
+  "capture_point": "PC1 NIC (SW-A Fa0/1) — 교육용 모델",
+  "test_description": "[교육용] ping -n 4 192.168.20.100 (교육용 예제 주소, 설계 Gateway 192.168.10.1)",
+  "analysis_scope": {
+    "time_window": {
+      "start": "EXAMPLE+0.000s",
+      "end": "EXAMPLE+3.006s"
+    },
+    "display_filter": "arp || icmp (capture filter: arp or icmp)",
+    "target_flow": "192.168.10.10 → 192.168.20.100",
+    "arp_targets": [
+      "192.168.20.100",
+      "192.168.10.1"
+    ],
+    "count_basis": {
+      "unit": "packets",
+      "retransmissions_included": true
+    }
+  },
+  "dns_response_count": null,
+  "tcp_syn_ack_count": null,
+  "tcp_rst_count": null,
+  "evidence": [
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-1",
+      "time": "EXAMPLE+0.001s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.1? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-2",
+      "time": "EXAMPLE+0.002s",
+      "protocol": "ARP",
+      "observation": "192.168.10.1 is at 00:d0:bc:00:00:0a"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-3",
+      "time": "EXAMPLE+0.003s",
+      "protocol": "ICMP",
+      "observation": "Echo (ping) request  seq=1"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-5",
+      "time": "EXAMPLE+1.004s",
+      "protocol": "ICMP",
+      "observation": "Echo (ping) request  seq=2"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-7",
+      "time": "EXAMPLE+2.005s",
+      "protocol": "ICMP",
+      "observation": "Echo (ping) request  seq=3"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-9",
+      "time": "EXAMPLE+3.006s",
+      "protocol": "ICMP",
+      "observation": "Echo (ping) request  seq=4"
+    }
+  ],
+  "limitations": [
+    "[교육용] 교육용 모델이 만든 값이며 실제 캡처가 아님",
+    "단일 캡처 지점(PC1 NIC)의 관찰",
+    "서버 쪽 캡처 없음 → Echo Request가 서버에 도착했는지 이 파일만으로는 모름"
+  ],
+  "null_reasons": {
+    "dns_query_count": "capture filter \"arp or icmp\"로 저장해 DNS를 수집하지 않음",
+    "dns_response_count": "capture filter \"arp or icmp\"로 저장해 DNS를 수집하지 않음",
+    "tcp_syn_count": "capture filter \"arp or icmp\"로 저장해 TCP를 수집하지 않음",
+    "tcp_syn_ack_count": "capture filter \"arp or icmp\"로 저장해 TCP를 수집하지 않음",
+    "tcp_rst_count": "capture filter \"arp or icmp\"로 저장해 TCP를 수집하지 않음"
+  }
+}
