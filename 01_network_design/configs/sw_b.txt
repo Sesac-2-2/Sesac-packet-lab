@@ -1,0 +1,31 @@
+! =========================================================
+! SW-B (L2 Switch, 2960) 설정 스크립트
+! 역할: VLAN20(운영팀) PC3, PC4, Server를 수용하는 Access 스위치
+! 사용법: Packet Tracer에서 SW-B 클릭 > CLI 탭 > 아래 명령을 순서대로 붙여넣기
+! =========================================================
+
+enable
+configure terminal
+
+! --- VLAN20 생성 ---
+vlan 20
+ name OPS_TEAM
+exit
+
+! --- PC3, PC4, Server가 꽂히는 포트: Access 모드, VLAN20 고정 ---
+interface range fastEthernet 0/1-3
+ switchport mode access
+ switchport access vlan 20
+exit
+
+! --- L3 Switch로 올라가는 업링크: Trunk ---
+interface gigabitEthernet 0/1
+ switchport mode trunk
+exit
+
+end
+write memory
+
+! --- 확인용 명령 ---
+! show vlan brief
+! show interfaces trunk

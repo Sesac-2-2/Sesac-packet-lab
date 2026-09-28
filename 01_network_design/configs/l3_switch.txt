@@ -1,0 +1,53 @@
+! =========================================================
+! L3 SWITCH 설정 스크립트
+! 역할: VLAN10 <-> VLAN20 사이의 Inter-VLAN Routing (Gateway)
+! 사용법: Packet Tracer에서 L3 Switch 클릭 > CLI 탭 > 아래 명령을 순서대로 붙여넣기
+! (줄 앞의 '!'는 Cisco IOS 주석 - 실행에 영향 없음, 설명용)
+! =========================================================
+
+enable
+configure terminal
+
+! --- VLAN 생성: 개발팀(10) / 운영팀(20)을 논리적으로 분리 ---
+vlan 10
+ name DEV_TEAM
+vlan 20
+ name OPS_TEAM
+exit
+
+! --- 라우팅 기능 켜기: 이게 없으면 SVI를 만들어도 VLAN 간 패킷을 못 넘겨줌 ---
+ip routing
+
+! --- VLAN10 Gateway(SVI) 설정: PC1/PC2가 다른 네트워크로 나갈 때 찾아오는 문 ---
+interface vlan 10
+ ip address 192.168.10.1 255.255.255.0
+ no shutdown
+exit
+
+! --- VLAN20 Gateway(SVI) 설정: PC3/PC4/Server가 다른 네트워크로 나갈 때 찾아오는 문 ---
+interface vlan 20
+ ip address 192.168.20.1 255.255.255.0
+ no shutdown
+exit
+
+! --- SW-A 방향 업링크: Trunk로 설정해야 VLAN10/20 트래픽이 한 케이블로 같이 지나갈 수 있음 ---
+interface gigabitEthernet 0/1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+exit
+
+! --- SW-B 방향 업링크: 위와 동일한 이유로 Trunk ---
+interface gigabitEthernet 0/2
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+exit
+
+end
+
+! --- 설정 저장: 이걸 안 하면 Packet Tracer 재시작/전원 재기동 시 설정이 날아갈 수 있음 ---
+write memory
+
+! --- 확인용 명령 (결과만 보는 명령, 설정 아님) ---
+! show vlan brief
+! show ip interface brief
+! show interfaces trunk

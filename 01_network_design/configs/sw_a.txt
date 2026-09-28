@@ -1,0 +1,31 @@
+! =========================================================
+! SW-A (L2 Switch, 2960) 설정 스크립트
+! 역할: VLAN10(개발팀) PC1, PC2를 수용하는 Access 스위치
+! 사용법: Packet Tracer에서 SW-A 클릭 > CLI 탭 > 아래 명령을 순서대로 붙여넣기
+! =========================================================
+
+enable
+configure terminal
+
+! --- VLAN10 생성: L3 Switch와 동일한 VLAN 번호/이름으로 맞춰야 함 ---
+vlan 10
+ name DEV_TEAM
+exit
+
+! --- PC1, PC2가 꽂히는 포트: Access 모드로 고정 (이 포트는 무조건 VLAN10) ---
+interface range fastEthernet 0/1-2
+ switchport mode access
+ switchport access vlan 10
+exit
+
+! --- L3 Switch로 올라가는 업링크: Trunk (나중에 VLAN20 트래픽도 같이 지나가야 할 수 있음) ---
+interface gigabitEthernet 0/1
+ switchport mode trunk
+exit
+
+end
+write memory
+
+! --- 확인용 명령 ---
+! show vlan brief
+! show interfaces trunk
