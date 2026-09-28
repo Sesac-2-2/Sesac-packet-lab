@@ -1,0 +1,84 @@
+/* packet_summary.example.json 사본 (자동 생성 — 원본을 고치면 tests/test_learning_lab.js가 불일치를 알려 줍니다) */
+window.PacketExample = {
+  "case_id": "EDU-EX-01",
+  "source_ip": "192.168.10.10",
+  "destination_ip": "192.168.20.100",
+  "arp_request_count": 8,
+  "arp_reply_count": 0,
+  "icmp_request_count": 0,
+  "icmp_reply_count": 0,
+  "dns_query_count": 0,
+  "tcp_syn_count": 0,
+  "notes": "[교육용 예제] 관찰 구간에 PC1이 192.168.10.254를 찾는 ARP Request를 8건 보냈고 ARP Reply는 없음. ICMP Echo Request는 전송되지 않음.",
+  "schema_version": "0.1-draft",
+  "capture_file": null,
+  "evidence_source": "example",
+  "capture_point": "PC1 NIC (SW-A Fa0/1) — 교육용 모델",
+  "test_description": "[교육용] PC1에서 ping -n 4 192.168.20.100 (교육용 예제 주소)",
+  "analysis_scope": {
+    "time_window": {
+      "start": "EXAMPLE+0.000s",
+      "end": "EXAMPLE+4.004s"
+    },
+    "display_filter": "arp || icmp || dns || tcp",
+    "target_flow": "PC1(192.168.10.10) → Server(192.168.20.100) ICMP Echo",
+    "arp_targets": [
+      "192.168.20.100",
+      "192.168.10.254"
+    ],
+    "count_basis": {
+      "unit": "packets",
+      "retransmissions_included": true
+    },
+    "field_filters": {
+      "arp_request_count": "arp.opcode == 1 && arp.src.proto_ipv4 == 192.168.10.10 && (arp.dst.proto_ipv4 == 192.168.20.100 || arp.dst.proto_ipv4 == 192.168.10.254)",
+      "arp_reply_count": "arp.opcode == 2 && arp.dst.proto_ipv4 == 192.168.10.10 && (arp.src.proto_ipv4 == 192.168.20.100 || arp.src.proto_ipv4 == 192.168.10.254)",
+      "icmp_request_count": "icmp.type == 8 && ip.src == 192.168.10.10 && ip.dst == 192.168.20.100",
+      "icmp_reply_count": "icmp.type == 0 && ip.src == 192.168.20.100 && ip.dst == 192.168.10.10",
+      "dns_query_count": "dns.flags.response == 0 && ip.src == 192.168.10.10",
+      "dns_response_count": "dns.flags.response == 1 && ip.dst == 192.168.10.10",
+      "tcp_syn_count": "tcp.flags.syn == 1 && tcp.flags.ack == 0 && ip.src == 192.168.10.10 && ip.dst == 192.168.20.100",
+      "tcp_syn_ack_count": "tcp.flags.syn == 1 && tcp.flags.ack == 1 && ip.src == 192.168.20.100 && ip.dst == 192.168.10.10",
+      "tcp_rst_count": "tcp.flags.reset == 1 && ip.src == 192.168.20.100 && ip.dst == 192.168.10.10"
+    }
+  },
+  "dns_response_count": 0,
+  "tcp_syn_ack_count": 0,
+  "tcp_rst_count": 0,
+  "evidence": [
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-1",
+      "time": "EXAMPLE+0.001s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-2",
+      "time": "EXAMPLE+1.001s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-3",
+      "time": "EXAMPLE+1.002s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-8",
+      "time": "EXAMPLE+4.004s",
+      "protocol": "ARP",
+      "observation": "8번째 ARP Request. 관찰 구간 끝까지 192.168.10.254의 ARP Reply 없음"
+    }
+  ],
+  "limitations": [
+    "[교육용] 교육용 모델이 만든 값이며 실제 캡처가 아님",
+    "PC1 NIC 한 지점만 관찰 → 다른 지점에서 ARP Request가 어디까지 전달됐는지 모름",
+    "ARP Reply 부재만으로 원인을 확정할 수 없음"
+  ],
+  "null_reasons": {}
+};

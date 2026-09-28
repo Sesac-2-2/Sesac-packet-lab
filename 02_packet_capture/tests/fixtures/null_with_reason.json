@@ -1,0 +1,16 @@
+{
+  "case_id": "FAULT-03",
+  "source_ip": "192.168.10.10",
+  "destination_ip": "192.168.20.20",
+  "arp_request_count": 8,
+  "arp_reply_count": 0,
+  "icmp_request_count": 0,
+  "icmp_reply_count": 0,
+  "dns_query_count": null,
+  "tcp_syn_count": 0,
+  "notes": "Gateway ARP 반복",
+  "null_reasons": {
+    "dns_query_count": "capture filter가 arp만 저장"
+  },
+  "schema_version": "0.1-draft"
+}

@@ -1,0 +1,18 @@
+{
+  "case_id": "FAULT-03",
+  "source_ip": "192.168.10.256",
+  "destination_ip": "192.168.20.20",
+  "arp_request_count": 8,
+  "arp_reply_count": 0,
+  "icmp_request_count": 0,
+  "icmp_reply_count": 0,
+  "dns_query_count": 0,
+  "tcp_syn_count": 0,
+  "notes": "Gateway ARP 반복",
+  "analysis_scope": {
+    "count_basis": {
+      "unit": "frames",
+      "retransmissions_included": "yes"
+    }
+  }
+}
