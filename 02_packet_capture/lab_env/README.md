@@ -137,4 +137,4 @@ sudo ./lab.sh capture stop all
 - 실행 검증 (2026-09-28, Windows 11 WSL2 Ubuntu): `check` 전 항목 OK, `up` 성공, `test all` 6종 모두 정상
   (ping 4/4 ×4, 같은 VLAN TTL 64 / 다른 VLAN TTL 63, DNS NOERROR A=192.168.20.100, HTTP 200). `status`의 VLAN·Trunk·SVI 구성도 설계와 같음.
 - `capture`는 아직 실제로 실행해 보지 않았습니다. 처음 쓸 때 결과를 확인합니다.
-- 위 검증 이후 `topology.conf` 분리와 장애 기능 삭제로 스크립트를 다시 작성했습니다. 새 버전은 `bash -n`, `shellcheck`만 통과했고 **WSL2 실행은 다시 확인해야 합니다.**
+- `topology.conf` 분리·장애 기능 삭제 후의 새 버전도 WSL2에서 `up`·`test all` 6종이 같은 결과로 정상 동작함을 확인했습니다 (2026-09-28 17:37).
