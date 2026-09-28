@@ -35,8 +35,19 @@ L2(ARP) → L3(ICMP) → DNS → TCP 순서로 검사하고, 먼저 막힌 계�
 python analyzer.py tests/fixtures/packet_summary.example.json -o /tmp/diagnosis.json
 ```
 
+`feat/2nd-part`를 `jae`에 병합한 뒤, 2번이 만든 예제 4종(`02_packet_capture/examples/`:
+정상/DNS 무응답/TCP RST/null 섞인 제한적 캡처) 전부에 대해 rule-based 경로를 검증함.
+기대한 계층에서 정확히 멈추고, null을 0으로 오인하지 않음을 확인.
+
+`--use-ai` 경로도 실제 OpenAI 호출로 검증함. 초기 버전은 ICMP/TCP처럼 이번 테스트에서
+아예 시도되지 않은 계층(count=0)을 실패 근거로 오해해 무관한 Hypothesis를 만들어내는
+문제가 있었음 → `_build_prompt()`에 "요청 카운트가 0보다 클 때만 그 계층을 실패로 본다,
+첫 실패 계층에 집중한다" 규칙을 명시해 해결. 재검증 결과 DNS 무응답 사례에서 DNS 계층
+내부 가설로만 좁혀짐.
+
 ## 아직 안 한 것
 
-- [ ] 실제 `packet_summary.json`으로 검증 (2번의 실제 캡처 대기 중)
+- [ ] 실제 `packet_summary.json`으로 검증 (2번의 실제 캡처 대기 중 — baseline은 나왔으나
+      장애 사례는 아직)
 - [ ] `ai_report.html` (HTML 리포트 생성) — 필요 시점에 판단
-- [ ] `--use-ai` 실제 OpenAI 응답 품질 확인 (지금은 rule-based 경로만 테스트함)
+- [ ] 4번(Network SRE) 착수 — 보류 중

@@ -182,6 +182,12 @@ def _build_prompt(data):
         "절차: Observe(관찰) → Evidence Summary(증거 요약) → Hypothesis 1/2/3(원인 후보) → "
         "추가로 확인하면 좋을 것 → Root Cause(확신이 있을 때만) → Recovery Action 순서로 "
         "한국어로 답하라. count가 null인 필드는 '관찰되지 않음'으로 취급하고 0으로 단정하지 말 것.\n\n"
+        "계층은 ARP → ICMP → DNS → TCP 순서로만 검토할 것. 각 계층은 그 계층의 요청 "
+        "카운트(arp_request_count/icmp_request_count/dns_query_count/tcp_syn_count)가 "
+        "0보다 크면서 그에 대응하는 응답이 없거나 0일 때만 '실패'로 본다. 요청 카운트 자체가 "
+        "0이거나 null인 계층은 이번 테스트에서 애초에 시도되지 않은 것이니 실패 근거로 쓰지 "
+        "말 것. 더 앞선 계층에서 이미 실패 지점을 찾았다면 그 뒤 계층은 결과를 알 수 없으므로 "
+        "별도의 Hypothesis로 만들지 말고, 발견한 첫 실패 계층 하나에 집중할 것.\n\n"
         f"{json.dumps(data, ensure_ascii=False, indent=2)}"
     )
 
