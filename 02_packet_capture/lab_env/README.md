@@ -145,4 +145,6 @@ sudo ./lab.sh capture stop all
   - 경로가 없을 때 라우터가 ICMP Unreachable을 보내는지
   - DNS 서비스가 멈췄을 때 서버가 ICMP Port Unreachable을 돌려보내는 동작 (Linux는 보통 돌려보냄)
 - STP, EtherChannel, 포트 보안 등은 만들지 않았습니다(과제 분석 대상 아님).
-- 이 스크립트는 작성 환경의 커널이 bridge VLAN 기능을 지원하지 않아, **문법·정적 검사(bash -n, shellcheck)까지만 했습니다. 실제 실행 검증은 아직 하지 않았습니다.** 처음 실행할 때 `check` → `up` → `test all` 순서로 확인하고, 오류가 나면 출력 전체를 알려 주세요.
+- 실행 검증 (2026-09-28, Windows 11 WSL2 Ubuntu): `check` 전 항목 OK, `up` 성공, `test all` 6종 모두 정상
+  (ping 4/4 ×4, 같은 VLAN TTL 64 / 다른 VLAN TTL 63, DNS NOERROR A=192.168.20.100, HTTP 200). `status`의 VLAN·Trunk·SVI 구성도 설계와 같음.
+- 장애 1~9번(`fault`)과 캡처(`capture`)는 아직 실제로 실행해 보지 않았습니다. 처음 쓸 때 결과를 확인합니다.
