@@ -44,7 +44,9 @@
 
 **먼저 WSL2에서 `check`를 실행합니다. "실패"가 나오면 Multipass로 갑니다.**
 
-WSL 버전 확인 (PowerShell): `wsl -l -v` → VERSION이 **2**여야 합니다. 1이면 이 방식은 동작하지 않습니다.
+> 확인 결과 (2026-09-28): Windows 11의 WSL2 Ubuntu에서 `check`의 모든 항목이 OK였습니다. 이 팀의 기본 실행 위치는 **WSL2**입니다.
+
+WSL 버전 확인은 **Windows PowerShell**에서 합니다(Ubuntu 안에서는 `wsl` 명령이 없습니다): `wsl -l -v` → VERSION이 **2**여야 합니다. 1이면 이 방식은 동작하지 않습니다.
 
 ## 3. 준비 (Ubuntu 공통)
 

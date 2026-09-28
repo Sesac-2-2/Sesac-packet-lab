@@ -115,9 +115,9 @@
 | 항목 | 값 |
 |---|---|
 | 실습 OS와 버전 | Windows 11 (최신 업데이트) ✅ |
-| Wireshark | 4.6.8 x64, 설치 위치 `E:\Program\Wireshark` ✅ (`tshark.exe` 포함 여부 ⏳ 확인 필요) |
+| Wireshark | 4.6.8 x64, 설치 위치 `E:\Program\Wireshark`, `tshark.exe` 포함 ✅ |
 | Packet Tracer 버전 | 9.0.1.0858 ✅ / pcap 내보내기 메뉴 없음 ✅ |
-| 캡처 환경 | `lab_env/` 재현 실습망 — WSL2에서 `check` 통과 여부 ⏳, 실패 시 Mac(Apple Silicon)의 Multipass Ubuntu |
+| 캡처 환경 | `lab_env/` 재현 실습망 — Windows WSL2 (Ubuntu, VERSION 2)에서 `check` 통과 ✅ (Linux 쪽 tshark 4.6.4) / `up`·`test all` 실행 확인 ⏳ |
 | 서버 IP / DNS IP / 도메인 / 포트 | `<SERVER_IP>` / `<DNS_IP>` / `<DOMAIN>` / `<WEB_PORT>` ⏳ 1번 작업 완료 후 |
 | 익명 장애 사례 형식 | ⏳ 4번 작업 완료 후 |
 | JSON 필드 합의 | ⏳ 3번 작업 완료 후 |
