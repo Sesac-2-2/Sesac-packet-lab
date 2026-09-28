@@ -1,0 +1,76 @@
+{
+  "html_example.json": {
+    "valid": true,
+    "error_fields": []
+  },
+  "missing_field.json": {
+    "valid": false,
+    "error_fields": [
+      "tcp_syn_count"
+    ]
+  },
+  "wrong_types.json": {
+    "valid": false,
+    "error_fields": [
+      "arp_request_count",
+      "icmp_reply_count"
+    ]
+  },
+  "bad_version.json": {
+    "valid": false,
+    "error_fields": [
+      "schema_version"
+    ]
+  },
+  "null_without_reason.json": {
+    "valid": false,
+    "error_fields": [
+      "dns_query_count"
+    ]
+  },
+  "null_with_reason.json": {
+    "valid": true,
+    "error_fields": []
+  },
+  "hint_in_name.json": {
+    "valid": false,
+    "error_fields": [
+      "capture_file",
+      "case_id"
+    ]
+  },
+  "example_unmarked.json": {
+    "valid": false,
+    "error_fields": [
+      "notes"
+    ]
+  },
+  "real_marked_example.json": {
+    "valid": false,
+    "error_fields": [
+      "notes"
+    ]
+  },
+  "bad_evidence.json": {
+    "valid": false,
+    "error_fields": [
+      "evidence[0].frame_number",
+      "evidence[1].event_id",
+      "evidence[1].observation"
+    ]
+  },
+  "array_root.json": {
+    "valid": false,
+    "error_fields": [
+      "(root)"
+    ]
+  },
+  "bad_ip_scope.json": {
+    "valid": false,
+    "error_fields": [
+      "analysis_scope.count_basis.retransmissions_included",
+      "analysis_scope.count_basis.unit",
+      "source_ip"
+    ]
+  }
+}

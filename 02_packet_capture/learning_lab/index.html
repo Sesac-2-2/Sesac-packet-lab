@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Packet Lab — 패킷 흐름 학습</title>
+<meta name="description" content="Packet.AI 2번 Packet Analyst 팀원 교육용 인터랙티브 학습 웹앱 (교육용 예제 모델)">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#/home" aria-label="Packet Lab 처음 화면">Packet Lab</a>
+    <div class="unit">
+      <div class="unit-title" id="unitTitle">시작하기</div>
+      <div class="unit-goal" id="unitGoal"></div>
+    </div>
+    <div class="top-tools">
+      <span class="badge badge-example" id="dataBadge">교육용 예제</span>
+      <label class="motion-toggle"><input type="checkbox" id="reduceMotion"> 움직임 줄이기</label>
+    </div>
+  </div>
+  <nav class="flow-nav" aria-label="학습 순서">
+    <ol id="flowNav"></ol>
+    <a class="demo-link" href="#/demo">발표용 짧은 경로</a>
+  </nav>
+  <div class="next-action" role="status" aria-live="polite"><strong>다음 행동</strong> <span id="nextAction"></span></div>
+</header>
+<main id="main" tabindex="-1"></main>
+<footer class="foot">
+  이 앱의 패킷은 모두 <strong>교육용 모델</strong>이 계산한 예제입니다. 실제 캡처나 실제 과제 사례가 아닙니다.
+  실제 분석 기록은 <code>packet_analysis.md</code>, 실제 전달 데이터는 <code>packet_summary.json</code>에 있습니다.
+</footer>
+<script src="js/engine.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/content.js"></script>
+<script src="js/example_data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

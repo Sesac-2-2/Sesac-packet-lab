@@ -1,0 +1,101 @@
+{
+  "case_id": "EDU-EX-01",
+  "source_ip": "192.168.10.10",
+  "destination_ip": "192.168.20.20",
+  "arp_request_count": 8,
+  "arp_reply_count": 0,
+  "icmp_request_count": 0,
+  "icmp_reply_count": 0,
+  "dns_query_count": 0,
+  "tcp_syn_count": 0,
+  "notes": "[교육용 예제] 관찰 구간 집계: ARP Request 8 / Reply 0, ICMP Echo Request 0 / Reply 0, DNS Query 0 / Response 0, TCP SYN 0 / SYN-ACK 0 / RST 0",
+  "schema_version": "0.1-draft",
+  "capture_file": null,
+  "evidence_source": "example",
+  "capture_point": "PC1 NIC (SW-A Fa0/1) — 교육용 모델",
+  "test_description": "[교육용] ping -n 4 192.168.20.20 (교육용 예제 주소, 설계 Gateway 192.168.10.1)",
+  "analysis_scope": {
+    "time_window": {
+      "start": "EXAMPLE+0.000s",
+      "end": "EXAMPLE+4.004s"
+    },
+    "display_filter": "arp || icmp || dns || tcp",
+    "target_flow": "192.168.10.10 → 192.168.20.20",
+    "arp_targets": [
+      "192.168.20.20",
+      "192.168.10.254"
+    ],
+    "count_basis": {
+      "unit": "packets",
+      "retransmissions_included": true
+    }
+  },
+  "dns_response_count": 0,
+  "tcp_syn_ack_count": 0,
+  "tcp_rst_count": 0,
+  "evidence": [
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-1",
+      "time": "EXAMPLE+0.001s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-2",
+      "time": "EXAMPLE+1.001s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-3",
+      "time": "EXAMPLE+1.002s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-4",
+      "time": "EXAMPLE+2.002s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-5",
+      "time": "EXAMPLE+2.003s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-6",
+      "time": "EXAMPLE+3.003s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-7",
+      "time": "EXAMPLE+3.004s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    },
+    {
+      "ref_type": "example_event",
+      "event_id": "EX-8",
+      "time": "EXAMPLE+4.004s",
+      "protocol": "ARP",
+      "observation": "Who has 192.168.10.254? Tell 192.168.10.10"
+    }
+  ],
+  "limitations": [
+    "[교육용] 교육용 모델이 만든 값이며 실제 캡처가 아님",
+    "단일 캡처 지점(PC1 NIC)의 관찰",
+    "PC1 NIC 한 지점만 관찰 → ARP Request가 어디까지 전달됐는지 모름",
+    "ARP Reply 부재만으로 원인을 확정할 수 없음"
+  ],
+  "null_reasons": {}
+}
