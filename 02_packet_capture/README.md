@@ -41,7 +41,8 @@
 | `fault_<case_id>.pcapng` | 과제 예시 (`fault_*.pcapng`) | ⏳ 실제 캡처 후 생성 (현재 없음) |
 | `recovered_<case_id>.pcapng` | 추가 | ⏳ 복구 후 캡처를 확보한 경우 |
 | `packet_analysis.md` | 과제 예시 | 템플릿 작성됨, 실제 내용 대기 |
-| `packet_summary.json` | 과제 예시 (Pipeline 전달 파일) | ⏳ 실제 분석 후 생성 (현재 없음) |
+| `packet_summary_<case_id>.json` | 추가 (3번과 합의) | ⏳ 사례별 실제 분석 결과. 사례마다 1개 |
+| `packet_summary.json` | 과제 예시 (Pipeline 전달 파일) | ⏳ 대표 사례 1건의 사본 (대표 사례는 팀이 정함) |
 | `README.md` | 추가 | 이 문서 |
 | `capture_checklist.md` | 추가 | 캡처 전후 체크리스트 |
 | `wireshark_filters.md` | 추가 | 필터·확인 필드·한계 |
@@ -68,8 +69,10 @@
    python3 summarize_pcap.py extract fault_<case_id>.pcapng --case-id <case_id> \
        --source-ip <PC_IP> --destination-ip <SERVER_IP> --next-hop <GATEWAY_IP> \
        --capture-point "<캡처 위치>" --test-description "<시각> <실행한 명령>" \
-       --start <초> --end <초> -o packet_summary.json
-   python3 summarize_pcap.py validate packet_summary.json
+       --start <초> --end <초> -o packet_summary_<case_id>.json
+   python3 summarize_pcap.py validate packet_summary_<case_id>.json
+   # 대표 사례라면 과제 HTML의 파일명으로도 복사
+   cp packet_summary_<case_id>.json packet_summary.json
    ```
    - **Windows 11**: `python3` 대신 `py`를 씁니다. PowerShell에서 여러 줄로 나눌 때는 `\` 대신 줄 끝에 `` ` ``(백틱)을 씁니다. `tshark`가 PATH에 없어도 Windows 설치 정보에서 Wireshark 위치(예: `E:\Program\Wireshark`)를 찾아 씁니다. 못 찾으면 `--tshark "E:\Program\Wireshark\tshark.exe"`로 지정합니다.
    - 재현 실습망(Linux)에서 캡처했다면 Linux 안에서 바로 실행해도 됩니다(`tshark` 설치됨).

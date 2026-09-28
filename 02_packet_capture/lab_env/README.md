@@ -93,7 +93,7 @@ python3 summarize_pcap.py extract fault_<case_id>.pcapng --case-id <case_id> \
   --capture-point "PC1 NIC (재현 실습망 pc1 eth0, swa p1 Access VLAN 10)" \
   --test-description "<시각> ping -c 4 192.168.20.100" --start <초> --end <초> \
   --limitation "별도 Linux 재현 환경(network namespace)에서 캡처. Packet Tracer 내부 트래픽 아님" \
-  -o packet_summary.json
+  -o packet_summary_<case_id>.json
 
 # 4) 복구 후 — 4번이 복구한 뒤 같은 순서 반복
 sudo ./lab.sh flush

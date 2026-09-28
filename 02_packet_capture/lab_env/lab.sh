@@ -211,18 +211,20 @@ cmd_capture_start() {
   local pidf="$RUN_DIR/cap_${point}.pid"
   [[ -f $pidf ]] && die "$point 에서 이미 캡처 중입니다."
   local log="$RUN_DIR/cap_${point}.log"
-  # 함수(nsx)가 아니라 명령을 직접 백그라운드로 실행해야 $!가 캡처 프로그램 자신의 PID가 된다
+  # - 함수(nsx)가 아니라 명령을 직접 백그라운드로 실행해야 $!가 캡처 프로그램 자신의 PID가 된다.
+  # - dumpcap은 sudo로 실행해도 스스로 권한을 내려놓고 파일을 열어 "Permission denied"가 날 수 있다.
+  #   그래서 캡처 데이터는 표준 출력(-w -)으로 받고, 파일은 이 스크립트(root)가 연다.
   if command -v dumpcap >/dev/null 2>&1; then
-    ip netns exec "$ns" dumpcap -i "$ifc" -w "$file" >"$log" 2>&1 &
+    ip netns exec "$ns" dumpcap -q -i "$ifc" -w - >"$file" 2>"$log" &
   else
     [[ $file == *.pcapng ]] && say "dumpcap이 없어 pcap 형식으로 저장합니다. 파일 이름을 .pcap으로 바꾸는 것을 권합니다."
-    ip netns exec "$ns" tcpdump -U -i "$ifc" -w "$file" >"$log" 2>&1 &
+    ip netns exec "$ns" tcpdump -U -i "$ifc" -w - >"$file" 2>"$log" &
   fi
   local pid=$!
   echo "$pid $file" > "$pidf"
   sleep 1.5
-  if ! kill -0 "$pid" 2>/dev/null || [[ ! -e $file ]]; then
-    rm -f "$pidf"
+  if ! kill -0 "$pid" 2>/dev/null; then
+    rm -f "$pidf"; [[ -s $file ]] || rm -f "$file"
     say "[실패] 캡처가 시작되지 않았습니다: $point → $file"
     say "---- 캡처 프로그램 출력 ($log)"; cat "$log" 2>/dev/null || true
     die "위 오류를 확인하세요."
