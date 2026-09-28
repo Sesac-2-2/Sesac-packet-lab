@@ -21,7 +21,7 @@ HOSTS=(pc1 pc2 pc3 pc4 srv)
 SWITCHES=(swa swb l3)
 ALL_NS=("${HOSTS[@]}" "${SWITCHES[@]}")
 RUN_DIR="/run/packetlab"
-OUT_DIR="${OUT_DIR:-$PWD}"
+OUT_DIR="${OUT_DIR:-$(cd "$HERE/.." && pwd)}"   # 기본값: 02_packet_capture/ (sudo -E가 막힌 환경에서도 동작)
 VLANS=("${!SVI_IP[@]}")
 
 ipof() { echo "${HOST_IP[$1]%/*}"; }   # 주소에서 /prefix 제거
@@ -271,7 +271,7 @@ Packet.AI 2번 캡처용 재현 실습망 (Linux network namespace)
   sudo ./lab.sh capture stop [지점|all]
 
 장애 적용과 복구는 4번(SRE) 담당이라 이 스크립트에는 없습니다.
-저장 위치: OUT_DIR 환경변수 (기본값: 현재 폴더). sudo에 넘기려면 sudo -E 사용.
+저장 위치: $OUT_DIR (기본값: lab_env의 상위 폴더 = 02_packet_capture/)
 EOF
 }
 

@@ -71,18 +71,18 @@ sudo ./lab.sh check
 
 ```bash
 cd Sesac-packet-lab/02_packet_capture/lab_env
-export OUT_DIR=..                       # 캡처 파일을 02_packet_capture/에 저장 (sudo -E로 넘김)
+# 캡처 파일은 기본으로 02_packet_capture/에 저장됩니다 (OUT_DIR 지정 불필요)
 
 # 1) 정상 Baseline — up 직후는 모든 ARP 캐시가 비어 있음
 sudo ./lab.sh down; sudo ./lab.sh up
-sudo -E ./lab.sh capture start pc1 normal.pcapng
-sudo -E ./lab.sh capture start srv normal_srv.pcapng     # 필요하면 다른 지점도 동시에
+sudo ./lab.sh capture start pc1 normal.pcapng
+sudo ./lab.sh capture start srv normal_srv.pcapng     # 필요하면 다른 지점도 동시에
 sudo ./lab.sh test all                  # 각 테스트 시작·끝 시각이 출력됨 → 기록
 sudo ./lab.sh capture stop all
 
 # 2) 장애 — 4번이 장애를 적용한 뒤 (방법은 팀 합의). 2번은 원인을 모르는 상태로 같은 순서를 반복
 sudo ./lab.sh flush                     # 정상 캡처와 캐시 조건을 맞춤
-sudo -E ./lab.sh capture start pc1 fault_<case_id>.pcapng
+sudo ./lab.sh capture start pc1 fault_<case_id>.pcapng
 sudo ./lab.sh test all
 sudo ./lab.sh capture stop all
 
@@ -97,7 +97,7 @@ python3 summarize_pcap.py extract fault_<case_id>.pcapng --case-id <case_id> \
 
 # 4) 복구 후 — 4번이 복구한 뒤 같은 순서 반복
 sudo ./lab.sh flush
-sudo -E ./lab.sh capture start pc1 recovered_<case_id>.pcapng
+sudo ./lab.sh capture start pc1 recovered_<case_id>.pcapng
 sudo ./lab.sh test all
 sudo ./lab.sh capture stop all
 ```
