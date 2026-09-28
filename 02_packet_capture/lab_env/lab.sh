@@ -210,15 +210,24 @@ cmd_capture_start() {
   local ns ifc; read -r ns ifc _ <<<"${CAP[$point]}"
   local pidf="$RUN_DIR/cap_${point}.pid"
   [[ -f $pidf ]] && die "$point 에서 이미 캡처 중입니다."
+  local log="$RUN_DIR/cap_${point}.log"
+  # 함수(nsx)가 아니라 명령을 직접 백그라운드로 실행해야 $!가 캡처 프로그램 자신의 PID가 된다
   if command -v dumpcap >/dev/null 2>&1; then
-    nsx "$ns" dumpcap -q -i "$ifc" -w "$file" >/dev/null 2>&1 &
+    ip netns exec "$ns" dumpcap -i "$ifc" -w "$file" >"$log" 2>&1 &
   else
     [[ $file == *.pcapng ]] && say "dumpcap이 없어 pcap 형식으로 저장합니다. 파일 이름을 .pcap으로 바꾸는 것을 권합니다."
-    nsx "$ns" tcpdump -q -U -i "$ifc" -w "$file" >/dev/null 2>&1 &
+    ip netns exec "$ns" tcpdump -U -i "$ifc" -w "$file" >"$log" 2>&1 &
   fi
-  echo "$! $file" > "$pidf"
-  sleep 1
-  say "캡처 시작 $(date '+%H:%M:%S'): $point → $file"
+  local pid=$!
+  echo "$pid $file" > "$pidf"
+  sleep 1.5
+  if ! kill -0 "$pid" 2>/dev/null || [[ ! -e $file ]]; then
+    rm -f "$pidf"
+    say "[실패] 캡처가 시작되지 않았습니다: $point → $file"
+    say "---- 캡처 프로그램 출력 ($log)"; cat "$log" 2>/dev/null || true
+    die "위 오류를 확인하세요."
+  fi
+  say "캡처 시작 $(date '+%H:%M:%S'): $point → $file (PID $pid)"
   say "캡처 지점 설명: ${CAP[$point]#* * }"
 }
 cmd_capture_stop() {
@@ -228,10 +237,18 @@ cmd_capture_stop() {
     local p=${f##*/cap_}; p=${p%.pid}
     [[ $which == all || $which == "$p" ]] || continue
     local pid file; read -r pid file <"$f"
-    kill -INT "$pid" 2>/dev/null || true; sleep 1
+    kill -TERM "$pid" 2>/dev/null || true
+    for _ in 1 2 3 4 5 6 7 8 9 10; do kill -0 "$pid" 2>/dev/null || break; sleep 0.5; done
+    kill -0 "$pid" 2>/dev/null && { kill -KILL "$pid" 2>/dev/null || true; say "[경고] $p 캡처가 제때 끝나지 않아 강제 종료했습니다. 파일 끝이 잘렸을 수 있습니다."; }
     rm -f "$f"
-    if [[ -n ${SUDO_USER:-} && -f $file ]]; then chown "$SUDO_USER" "$file" 2>/dev/null || true; fi
-    say "캡처 종료 $(date '+%H:%M:%S'): $p → $file"
+    if [[ ! -s $file ]]; then
+      say "[실패] $p 캡처 파일이 없거나 비어 있습니다: $file"
+      say "---- 캡처 프로그램 출력 ($RUN_DIR/cap_${p}.log)"; cat "$RUN_DIR/cap_${p}.log" 2>/dev/null || true
+      continue
+    fi
+    if [[ -n ${SUDO_USER:-} ]]; then chown "$SUDO_USER" "$file" 2>/dev/null || true; fi
+    local n="?"; command -v capinfos >/dev/null 2>&1 && n=$(capinfos -Mc "$file" 2>/dev/null | awk -F': *' '/Number of packets/{print $2}')
+    say "캡처 종료 $(date '+%H:%M:%S'): $p → $file ($(stat -c %s "$file") bytes, 패킷 ${n}개)"
   done
 }
 
