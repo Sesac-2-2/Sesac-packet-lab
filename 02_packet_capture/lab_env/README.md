@@ -136,5 +136,5 @@ sudo ./lab.sh capture stop all
 - STP, EtherChannel, 포트 보안 등은 만들지 않았습니다(과제 분석 대상 아님).
 - 실행 검증 (2026-09-28, Windows 11 WSL2 Ubuntu): `check` 전 항목 OK, `up` 성공, `test all` 6종 모두 정상
   (ping 4/4 ×4, 같은 VLAN TTL 64 / 다른 VLAN TTL 63, DNS NOERROR A=192.168.20.20, HTTP 200). `status`의 VLAN·Trunk·SVI 구성도 설계와 같음.
-- `capture`는 아직 실제로 실행해 보지 않았습니다. 처음 쓸 때 결과를 확인합니다.
+- `capture`: 처음에는 `dumpcap`이 결과 파일을 열 때 `Permission denied`가 났습니다. 캡처 데이터를 표준 출력으로 받아 스크립트가 저장하도록 고친 뒤, 정상 Baseline 캡처에 성공했습니다(2026-09-28 17:51, PC1 58 frames / Server 31 frames).
 - `topology.conf` 분리·장애 기능 삭제 후의 새 버전도 WSL2에서 `up`·`test all` 6종이 같은 결과로 정상 동작함을 확인했습니다 (2026-09-28 17:37).

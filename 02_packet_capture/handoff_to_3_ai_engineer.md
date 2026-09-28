@@ -137,3 +137,10 @@
 | 기존 `ai_packet_assistant` | 패킷 1개 단위 설명용이라 이 계약과 충돌 없음 ✅ |
 | 추가 예제 4종 | `02_packet_capture/examples/`에 추가 ✅ (정상, DNS 무응답, TCP RST, null 섞인 제한적 캡처) |
 | EDU-EX-01의 `.254` | 설계 Gateway가 아니라 "Gateway 오설정 장애"에서 PC가 찾은 **관찰값**. 설계 Gateway는 `.1` (자세한 설명: `examples/README.md`) |
+
+## 11. 정상 Baseline에서 확인된 주의점 (실제 캡처, 2026-09-28)
+
+- **정상 상태에서도 DNS 오류 응답(rcode 5 `Refused`)이 1건 나옵니다.** 웹 접속 때 클라이언트가 A와 AAAA(IPv6)를 함께 묻는데, 재현 환경의 DNS 서버가 AAAA 질의를 거부하기 때문입니다. A 응답은 정상이고 웹 접속도 성공합니다.
+  → 그래서 `dns_response_count`에는 이 오류 응답이 포함됩니다. "오류 응답이 있다 = 장애"로 판단하지 말아 주세요. 오류 여부는 `evidence`의 rcode와 질의 유형(A/AAAA)을 함께 봐야 합니다.
+- 캐시 때문에 ARP가 안 보이는 경우가 정상 상태에서도 있습니다. 예를 들어 Gateway MAC을 이미 알면, 다른 VLAN으로 ping해도 ARP가 없습니다.
+- 정상 Baseline의 집계 값(목적지 = 서버 192.168.20.20 기준): ARP 1/1, ICMP 4/4, DNS 3/3(그중 1건 rcode 5), TCP SYN 1, SYN-ACK 1, RST 0.

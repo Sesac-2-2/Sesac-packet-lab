@@ -24,7 +24,7 @@
 | 하지 않는 것 | 네트워크 설계(1번), AI 진단 구현(3번), 장애 주입·복구·Dashboard(4번) |
 
 **완료 기준**
-- [ ] 정상 Baseline 캡처 1건 이상 (`normal.pcapng`)
+- [x] 정상 Baseline 캡처 1건 이상 (`normal.pcapng`, `normal_srv.pcapng`)
 - [ ] 장애 캡처 1건 이상 (`fault_<case_id>.pcapng`), 원인을 모르는 상태에서 분석
 - [ ] 정상과 비교한 분석 기록 (`packet_analysis.md`)
 - [ ] 3번이 실제 입력으로 쓰는 `packet_summary.json` (데이터 계약 통과)
@@ -37,7 +37,8 @@
 
 | 파일 | 구분 | 상태 |
 |---|---|---|
-| `normal.pcapng` | 과제 예시 | ⏳ 실제 캡처 후 생성 (현재 없음) |
+| `normal.pcapng` | 과제 예시 | ✅ 정상 Baseline, PC1 NIC (58 frames, 2026-09-28, 재현 실습망) |
+| `normal_srv.pcapng` | 추가 | ✅ 정상 Baseline, Server NIC (31 frames, 같은 시각) |
 | `fault_<case_id>.pcapng` | 과제 예시 (`fault_*.pcapng`) | ⏳ 실제 캡처 후 생성 (현재 없음) |
 | `recovered_<case_id>.pcapng` | 추가 | ⏳ 복구 후 캡처를 확보한 경우 |
 | `packet_analysis.md` | 과제 예시 | 템플릿 작성됨, 실제 내용 대기 |
@@ -195,7 +196,7 @@ python3 -m unittest discover -s tests -v
 
 | 항목 | 현재 상태 |
 |---|---|
-| 실제 정상·장애 증거가 있는가 | ⏳ 아직 없음 (캡처 대기) |
+| 실제 정상·장애 증거가 있는가 | 정상 ✅ (`normal.pcapng`, `normal_srv.pcapng`, 재현 실습망) / 장애 ⏳ 4번의 익명 사례 대기 |
 | 패킷을 먼저 관찰했는가 | 절차에 반영 (장애 분석은 증상과 캡처부터 시작) |
 | AI에 정답을 먼저 알려주지 않았는가 | 익명 `case_id`, 원인 암시 파일명 금지, 검증기에서 차단 |
 | 내 출력이 다음 담당자의 입력으로 연결되는가 | `data_contract.md` 초안 작성, 3번과 합의 대기 |
