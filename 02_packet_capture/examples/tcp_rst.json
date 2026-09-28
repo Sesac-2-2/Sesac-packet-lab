@@ -1,7 +1,7 @@
 {
   "case_id": "EDU-EX-04",
   "source_ip": "192.168.10.10",
-  "destination_ip": "192.168.20.100",
+  "destination_ip": "192.168.20.20",
   "arp_request_count": 1,
   "arp_reply_count": 1,
   "icmp_request_count": 0,
@@ -20,9 +20,9 @@
       "end": "EXAMPLE+0.021s"
     },
     "display_filter": "arp || icmp || dns || tcp",
-    "target_flow": "192.168.10.10 → 192.168.20.100",
+    "target_flow": "192.168.10.10 → 192.168.20.20",
     "arp_targets": [
-      "192.168.20.100",
+      "192.168.20.20",
       "192.168.10.1"
     ],
     "count_basis": {
@@ -60,7 +60,7 @@
       "event_id": "EX-8",
       "time": "EXAMPLE+0.008s",
       "protocol": "DNS",
-      "observation": "Standard query response 0x1a2b A web.packetlab.example A 192.168.20.100"
+      "observation": "Standard query response 0x1a2b A web.packetlab.example A 192.168.20.20"
     },
     {
       "ref_type": "example_event",

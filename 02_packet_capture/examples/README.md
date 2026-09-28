@@ -15,4 +15,4 @@
 **EDU-EX-01의 `192.168.10.254`에 대해**
 설계상의 Gateway는 `192.168.10.1`입니다. EDU-EX-01은 **"PC1의 Gateway가 잘못 설정된 장애"를 관찰한 예제**라서, PC1이 실제로 ARP로 찾은 잘못된 주소(`.254`)가 `arp_targets`에 들어 있습니다. `arp_targets`는 "설계값"이 아니라 "이 캡처에서 PC가 실제로 찾은 next hop"을 기록하는 필드입니다.
 
-주소는 과제 HTML 기준 교육용 값입니다. 1번의 `network_spec.md`를 받으면 교육용 모델의 주소와 함께 다시 생성합니다.
+주소는 1번 `network_spec.md`의 IP/VLAN 표를 따릅니다 (Server 192.168.20.20). 명세가 바뀌면 `node examples/generate_examples.js`로 다시 생성합니다.

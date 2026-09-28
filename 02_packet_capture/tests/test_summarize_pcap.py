@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover
 TSHARK = shutil.which("tshark")
 PC1, PC1_MAC = "192.168.10.10", "00:10:0a:00:00:10"
 GW, GW_MAC = "192.168.10.1", "00:d0:bc:00:00:0a"
-SRV = "192.168.20.100"
+SRV = "192.168.20.20"
 BC = "ff:ff:ff:ff:ff:ff"
 
 
@@ -197,7 +197,7 @@ const cases = [[{}, 'web'], [{pc1Gateway:'192.168.10.254'}, 'ping_srv'], [{sviDo
 for (const [cfg, t] of cases) {
   const sim = E.simulate(cfg, t);
   const ev = E.eventsAt(sim.events, 'PC1');
-  const dst = E.TESTS[t].target === E.DOMAIN ? '192.168.20.100' : E.TESTS[t].target;
+  const dst = E.TESTS[t].target === E.DOMAIN ? '192.168.20.20' : E.TESTS[t].target;
   const targets = [dst].concat(ev.filter(e => e.kind === 'arp_request' && e.srcIp === '192.168.10.10').map(e => e.dstIp));
   out.push({cfg, t, dst, targets: [...new Set(targets)], counts: E.summarize(sim.events, 'PC1', '192.168.10.10', dst, targets), events: ev});
 }
@@ -223,7 +223,7 @@ def events_to_packets(events):
             elif k == "icmp_echo_reply":
                 p = eth / ip / ICMP(type=0, seq=int(f["icmp.seq"]))
             elif k == "icmp_unreach":
-                p = eth / ip / ICMP(type=3, code=0) / IP(src=e["dstIp"], dst="192.168.20.100") / ICMP(type=8)
+                p = eth / ip / ICMP(type=3, code=0) / IP(src=e["dstIp"], dst="192.168.20.20") / ICMP(type=8)
             elif k == "dns_query":
                 p = eth / ip / UDP(sport=50000, dport=53) / DNS(id=0x1a2b, rd=1, qd=DNSQR(qname=f["dns.qry.name"]))
             elif k == "dns_response":

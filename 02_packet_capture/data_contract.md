@@ -59,7 +59,7 @@
   "time_window": { "start": "2026-10-05T10:02:00+09:00", "end": "2026-10-05T10:02:30+09:00" },
   "display_filter": "ip.addr == 192.168.10.10 || arp",
   "target_flow": "PC1 → Server ICMP Echo",
-  "arp_targets": ["192.168.20.100", "192.168.10.1"],
+  "arp_targets": ["192.168.20.20", "192.168.10.1"],
   "count_basis": { "unit": "packets", "retransmissions_included": true },
   "field_filters": { "arp_request_count": "arp.opcode == 1 && arp.src.proto_ipv4 == 192.168.10.10 && ..." }
 }

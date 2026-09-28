@@ -87,11 +87,11 @@ test('실험실의 모든 비정상 설정값이 적어도 한 테스트의 패�
 
 // ---------------------------------------------------------------- SYN / SYN-ACK / RST
 test('Web 닫힘 → SYN 1, RST 1, SYN-ACK 0 / Web 폐기 → SYN 3(재전송), 응답 0', () => {
-  const closed = E.summarize(E.simulate({ webPort: 'closed' }, 'web').events, 'PC1', '192.168.10.10', '192.168.20.100');
+  const closed = E.summarize(E.simulate({ webPort: 'closed' }, 'web').events, 'PC1', '192.168.10.10', '192.168.20.20');
   assert.deepStrictEqual([closed.tcp_syn_count, closed.tcp_syn_ack_count, closed.tcp_rst_count], [1, 0, 1]);
-  const filt = E.summarize(E.simulate({ webPort: 'filtered' }, 'web').events, 'PC1', '192.168.10.10', '192.168.20.100');
+  const filt = E.summarize(E.simulate({ webPort: 'filtered' }, 'web').events, 'PC1', '192.168.10.10', '192.168.20.20');
   assert.deepStrictEqual([filt.tcp_syn_count, filt.tcp_syn_ack_count, filt.tcp_rst_count], [3, 0, 0]);
-  const ok = E.summarize(E.simulate({}, 'web').events, 'PC1', '192.168.10.10', '192.168.20.100');
+  const ok = E.summarize(E.simulate({}, 'web').events, 'PC1', '192.168.10.10', '192.168.20.20');
   assert.deepStrictEqual([ok.tcp_syn_count, ok.tcp_syn_ack_count, ok.tcp_rst_count], [1, 1, 0], 'SYN-ACK는 tcp_syn_count에 들어가지 않음');
 });
 
@@ -120,16 +120,16 @@ test('Access VLAN 오류: PC1 NIC만 보면 SVI Vlan10 down과 구분되지 않�
 test('Trunk VLAN 20 누락: 서버 NIC에는 아무것도 도착하지 않고, PC3 NIC에 L3SW의 ARP가 보인다', () => {
   const r = E.simulate({ trunkBAllowed: [10] }, 'ping_srv');
   assert.strictEqual(at(r, 'SRV').length, 0);
-  assert.ok(at(r, 'PC3').some((e) => e.kind === 'arp_request' && e.srcIp === '192.168.20.1' && e.dstIp === '192.168.20.100'));
+  assert.ok(at(r, 'PC3').some((e) => e.kind === 'arp_request' && e.srcIp === '192.168.20.1' && e.dstIp === '192.168.20.20'));
 });
 test('Subnet Mask /16: Gateway가 아니라 서버 IP를 직접 ARP로 찾는다', () => {
   const r = at(E.simulate({ pc1Mask: 16 }, 'ping_srv'));
-  assert.ok(r.every((e) => e.kind === 'arp_request' && e.dstIp === '192.168.20.100'));
+  assert.ok(r.every((e) => e.kind === 'arp_request' && e.dstIp === '192.168.20.20'));
 });
 test('ICMP Unreachable은 Echo Reply로 세지 않는다 (SVI Vlan20 down)', () => {
   const r = E.simulate({ sviDown: 20 }, 'ping_srv');
   assert.ok(r.events.some((e) => e.kind === 'icmp_unreach'));
-  assert.strictEqual(E.summarize(r.events, 'PC1', '192.168.10.10', '192.168.20.100').icmp_reply_count, 0);
+  assert.strictEqual(E.summarize(r.events, 'PC1', '192.168.10.10', '192.168.20.20').icmp_reply_count, 0);
 });
 
 // ---------------------------------------------------------------- 초기화 / 상태 독립성

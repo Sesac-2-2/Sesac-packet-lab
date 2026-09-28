@@ -430,7 +430,7 @@
     }
     if (id === 'c') {
       main.appendChild(h('div', { class: 'grid grid-3' },
-        [['DNS', '어디로 가야 하나?', '이름 web.packetlab.example → IP 192.168.20.100'], ['TCP', '상대가 받을 준비가 됐나?', 'SYN → SYN-ACK → ACK로 연결을 연다'], ['HTTP', '무엇을 달라고 할까?', 'GET / → 200 OK']].map(function (x) {
+        [['DNS', '어디로 가야 하나?', '이름 web.packetlab.example → IP 192.168.20.20'], ['TCP', '상대가 받을 준비가 됐나?', 'SYN → SYN-ACK → ACK로 연결을 연다'], ['HTTP', '무엇을 달라고 할까?', 'GET / → 200 OK']].map(function (x) {
           return h('div', { class: 'card' }, protoBadge(x[0]), h('p', null, h('b', { text: x[1] })), h('p', { class: 'small', text: x[2] }));
         })));
       main.appendChild(h('p', { class: 'small muted', text: '이 예제는 일반 DNS(UDP 53)와 일반 HTTP(TCP 80)입니다. 실제 HTTPS나 암호화 DNS에서는 요청 내용이 암호화되어 이렇게 보이지 않을 수 있습니다.' }));
@@ -681,9 +681,9 @@
     'EDU-CASE-2': 'SW-A의 PC1 포트(Fa0/1)가 VLAN 20에 할당되어 있었다. PC1 NIC에서는 ARP만 반복되어 SVI down과 비슷해 보였다. 하지만 같은 VLAN 10의 PC2와도 통신이 안 됐고, VLAN 20의 PC3 NIC에서 PC1의 ARP가 보였다. 이것이 PC1의 브로드캐스트가 VLAN 20으로 퍼지고 있다는 근거였다.',
     'EDU-CASE-3': 'L3SW와 SW-B 사이 Trunk에서 VLAN 20이 빠져 있었다. PC1은 Gateway의 MAC을 찾았고 ping도 내보냈지만 답이 오지 않았다. 다른 지점(PC3 NIC, VLAN 20)에서 L3SW가 서버를 찾는 ARP를 반복하는 것이 보였고, 서버 NIC에는 아무것도 도착하지 않았다.',
     'EDU-CASE-4': 'L3SW의 Vlan10 SVI가 down이었다. PC1이 192.168.10.1을 찾는 ARP에 답이 없었다. 같은 VLAN 10의 PC2와는 통신이 됐으므로, PC1의 포트 VLAN보다는 Gateway 쪽 인터페이스를 의심할 근거가 됐다.',
-    'EDU-CASE-5': 'PC1의 DNS 서버 주소가 192.168.20.53으로 잘못 설정되어 있었다. 서버 IP로 ping은 됐다. DNS Query의 목적지 IP가 서버(192.168.20.100)가 아니라 192.168.20.53이었고, 응답이 없었다.',
+    'EDU-CASE-5': 'PC1의 DNS 서버 주소가 192.168.20.53으로 잘못 설정되어 있었다. 서버 IP로 ping은 됐다. DNS Query의 목적지 IP가 서버(192.168.20.20)가 아니라 192.168.20.53이었고, 응답이 없었다.',
     'EDU-CASE-6': 'Server의 웹 서비스(TCP 80)가 중지되어 있었다. DNS와 ping은 정상이었다. SYN에 대해 서버가 RST로 답했다. 즉 서버까지는 도달했지만 80번 포트에서 연결을 받는 프로그램이 없었다.',
-    'EDU-CASE-7': 'PC1의 Subnet Mask가 /16으로 잘못 설정되어 있었다. PC1은 서버(192.168.20.100)를 같은 네트워크로 착각해 Gateway 대신 서버 IP를 직접 ARP로 찾았다. Gateway ping은 됐다.'
+    'EDU-CASE-7': 'PC1의 Subnet Mask가 /16으로 잘못 설정되어 있었다. PC1은 서버(192.168.20.20)를 같은 네트워크로 착각해 Gateway 대신 서버 IP를 직접 ARP로 찾았다. Gateway ping은 됐다.'
   };
   function blindNew(i) { return { i: i, checks: [], sel: null, notes: [], cands: {}, reason: '', hint: 0, submitted: false, reveal: false, candHistory: [] }; }
   function checkObj(c) { return c.type === 'status' ? { type: 'status', check: c.check } : { type: 'test', test: c.test, cp: c.cp }; }

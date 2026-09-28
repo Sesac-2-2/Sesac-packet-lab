@@ -17,8 +17,8 @@
 
 예시
   python3 summarize_pcap.py extract fault_FAULT-03.pcapng --case-id FAULT-03 \\
-      --source-ip 192.168.10.10 --destination-ip 192.168.20.100 --next-hop 192.168.10.1 \\
-      --capture-point "PC1 NIC (SW-A Fa0/1)" --test-description "10:02:00 ping -n 4 192.168.20.100" \\
+      --source-ip 192.168.10.10 --destination-ip 192.168.20.20 --next-hop 192.168.10.1 \\
+      --capture-point "PC1 NIC (SW-A Fa0/1)" --test-description "10:02:00 ping -n 4 192.168.20.20" \\
       -o packet_summary.json
   python3 summarize_pcap.py validate packet_summary.json
 

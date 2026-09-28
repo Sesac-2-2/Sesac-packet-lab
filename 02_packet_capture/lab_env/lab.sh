@@ -2,7 +2,7 @@
 # Packet.AI 2번 Packet Analyst — 캡처용 재현 실습망 (Linux network namespace)
 #
 # 2번이 실제 .pcapng를 얻기 위해 쓰는 캡처 환경이다. 2번이 하는 일(테스트 실행·캡처·상태 관찰)만 제공한다.
-#  - 토폴로지 값은 topology.conf에서 읽는다. 네트워크 설계는 1번 담당이며, 지금 값은 과제 HTML 기준 임시값이다.
+#  - 토폴로지 값은 topology.conf에서 읽는다. 네트워크 설계는 1번 담당. IP/VLAN은 1번 명세 반영, 스위치 연결·도메인·포트는 임시값.
 #  - 장애 적용과 복구는 4번(SRE) 담당이므로 이 스크립트에 넣지 않는다.
 #  - 이 트래픽은 "별도 Linux 환경에서 재현한 트래픽"이다. Packet Tracer 내부 트래픽이 아니다.
 #  - 모든 장비는 network namespace 안에 만든다. 호스트(VM/WSL)의 기존 네트워크 설정은 바꾸지 않는다.

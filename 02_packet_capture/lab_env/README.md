@@ -8,7 +8,7 @@
 >
 > **역할 경계**
 > - 이 도구는 2번의 일(테스트 실행, 캡처, 상태 관찰)만 합니다.
-> - 네트워크 설계는 **1번** 담당입니다. 토폴로지 값은 `topology.conf`에 따로 두었고, 지금 값은 과제 HTML 기준 **임시값**입니다. 1번의 `network_spec.md`를 받으면 그 값으로 바꿉니다.
+> - 네트워크 설계는 **1번** 담당입니다. 토폴로지 값은 `topology.conf`에 따로 두었습니다. IP·Mask·Gateway·VLAN·SVI는 1번 `network_spec.md`를 반영했고, 스위치 연결·포트 이름·도메인·웹 포트는 아직 명세에 없어 **임시값**입니다.
 > - 장애 적용과 복구는 **4번** 담당이라 이 도구에 넣지 않았습니다. 4번이 이 환경에 장애를 어떻게 적용할지는 팀이 정합니다.
 
 ---
@@ -22,7 +22,7 @@
                  [swa] SW-A                                [swb] SW-B
              p1 │ VLAN10   p2 │ VLAN20          p1 │ VLAN10  p2 │ VLAN20  p24 │ VLAN20
              [pc1]          [pc3]               [pc2]        [pc4]        [srv] DNS + Web
-         192.168.10.10  192.168.20.10       192.168.10.11 192.168.20.11  192.168.20.100
+         192.168.10.10  192.168.20.10       192.168.10.11 192.168.20.11  192.168.20.20
 ```
 
 | 과제 구성 요소 | 이 환경에서 대응하는 것 | 정식 용어 |
@@ -33,10 +33,10 @@
 | Access Port | 포트에 VLAN 하나를 태그 없이 할당 | PVID + untagged |
 | Trunk | 포트에 여러 VLAN을 태그 붙여 허용 | 802.1Q tagged |
 | L3 스위치의 SVI | 브리지 위의 VLAN 인터페이스 + 라우팅 | VLAN interface + `ip_forward` |
-| DNS 서버 | `dnsmasq` (`web.packetlab.example` → 192.168.20.100) | |
+| DNS 서버 | `dnsmasq` (`web.packetlab.example` → 192.168.20.20) | |
 | Web 서버 | `python3 -m http.server 80` | |
 
-- 주소·VLAN·포트 배치는 `topology.conf`에서 읽습니다. 지금 값은 과제 HTML의 기준값(VLAN 10/20, Gateway .1)으로 정한 **임시값**입니다. 1번의 `network_spec.md`를 받으면 이 파일만 바꿉니다. `lab.sh`는 고치지 않아도 됩니다.
+- 주소·VLAN·포트 배치는 `topology.conf`에서 읽습니다. IP/VLAN은 1번 명세를 반영했습니다(Server = 192.168.20.20). 명세가 바뀌면 이 파일만 바꿉니다. `lab.sh`는 고치지 않아도 됩니다.
 - 모든 장비는 namespace 안에만 만듭니다. VM이나 WSL의 원래 네트워크 설정은 바꾸지 않습니다. `down`으로 전부 지워집니다.
 - IPv6는 namespace 안에서 끕니다. 캡처에 과제와 무관한 IPv6 패킷이 섞이지 않게 하기 위해서입니다.
 
@@ -89,9 +89,9 @@ sudo ./lab.sh capture stop all
 # 3) JSON 만들기 (Linux에서 바로 가능. tshark 설치됨)
 cd ..
 python3 summarize_pcap.py extract fault_<case_id>.pcapng --case-id <case_id> \
-  --source-ip 192.168.10.10 --destination-ip 192.168.20.100 --next-hop 192.168.10.1 \
+  --source-ip 192.168.10.10 --destination-ip 192.168.20.20 --next-hop 192.168.10.1 \
   --capture-point "PC1 NIC (재현 실습망 pc1 eth0, swa p1 Access VLAN 10)" \
-  --test-description "<시각> ping -c 4 192.168.20.100" --start <초> --end <초> \
+  --test-description "<시각> ping -c 4 192.168.20.20" --start <초> --end <초> \
   --limitation "별도 Linux 재현 환경(network namespace)에서 캡처. Packet Tracer 내부 트래픽 아님" \
   -o packet_summary_<case_id>.json
 
@@ -135,6 +135,6 @@ sudo ./lab.sh capture stop all
   - DNS 서비스가 멈췄을 때 서버가 ICMP Port Unreachable을 돌려보내는 동작 (Linux는 보통 돌려보냄)
 - STP, EtherChannel, 포트 보안 등은 만들지 않았습니다(과제 분석 대상 아님).
 - 실행 검증 (2026-09-28, Windows 11 WSL2 Ubuntu): `check` 전 항목 OK, `up` 성공, `test all` 6종 모두 정상
-  (ping 4/4 ×4, 같은 VLAN TTL 64 / 다른 VLAN TTL 63, DNS NOERROR A=192.168.20.100, HTTP 200). `status`의 VLAN·Trunk·SVI 구성도 설계와 같음.
+  (ping 4/4 ×4, 같은 VLAN TTL 64 / 다른 VLAN TTL 63, DNS NOERROR A=192.168.20.20, HTTP 200). `status`의 VLAN·Trunk·SVI 구성도 설계와 같음.
 - `capture`는 아직 실제로 실행해 보지 않았습니다. 처음 쓸 때 결과를 확인합니다.
 - `topology.conf` 분리·장애 기능 삭제 후의 새 버전도 WSL2에서 `up`·`test all` 6종이 같은 결과로 정상 동작함을 확인했습니다 (2026-09-28 17:37).

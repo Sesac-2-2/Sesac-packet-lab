@@ -151,16 +151,16 @@
     b: {
       id: 'b', title: 'B. 다른 네트워크의 서버로', test: 'ping_srv',
       goal: '다른 네트워크로 보낼 때 최종 목적지(IP)와 다음 장비(MAC)가 왜 다른지 설명할 수 있다.',
-      conditions: 'PC1 192.168.10.10/24 (VLAN 10) → Server 192.168.20.100/24 (VLAN 20). PC1의 Default Gateway는 192.168.10.1(L3SW Vlan10)이다. NAT는 쓰지 않는다. 교육용 예제 주소다.',
+      conditions: 'PC1 192.168.10.10/24 (VLAN 10) → Server 192.168.20.20/24 (VLAN 20). PC1의 Default Gateway는 192.168.10.1(L3SW Vlan10)이다. NAT는 쓰지 않는다. 교육용 예제 주소다.',
       predict: { q: 'PC1이 서버(다른 네트워크)로 ping을 보낼 때, ARP로 찾는 MAC은 누구의 것일까?', options: [['srv', '서버의 MAC'], ['gw', 'Gateway(L3SW Vlan10)의 MAC'], ['pc3', 'PC3의 MAC'], ['none', 'MAC은 필요 없다']], answer: 'gw',
         why: 'ARP 브로드캐스트는 라우터를 넘지 못한다. 그래서 PC1은 서버의 MAC을 직접 알 수 없다. 대신 "맡길 장비"인 Gateway의 MAC을 찾고, 그 뒤는 Gateway가 이어서 전달한다.' },
-      points: ['PC1 계산: 192.168.20.100은 내 네트워크(192.168.10.0/24) 밖이다 → Gateway에게 맡긴다.', '첫 구간: 도착 MAC = Gateway, 도착 IP = 서버.', 'L3SW가 VLAN 20 쪽에서 서버 MAC을 ARP로 찾는다.', '두 번째 구간: MAC은 새로 바뀌고, IP는 그대로다. MAC은 구간마다 바뀌고 IP는 끝까지 같다.'],
+      points: ['PC1 계산: 192.168.20.20은 내 네트워크(192.168.10.0/24) 밖이다 → Gateway에게 맡긴다.', '첫 구간: 도착 MAC = Gateway, 도착 IP = 서버.', 'L3SW가 VLAN 20 쪽에서 서버 MAC을 ARP로 찾는다.', '두 번째 구간: MAC은 새로 바뀌고, IP는 그대로다. MAC은 구간마다 바뀌고 IP는 끝까지 같다.'],
       check: ['q_gwmac']
     },
     c: {
       id: 'c', title: 'C. 도메인으로 웹 페이지 열기', test: 'web',
       goal: 'DNS, TCP, HTTP가 각각 어떤 문제를 해결하는지 순서대로 설명할 수 있다.',
-      conditions: 'PC1이 브라우저에 http://web.packetlab.example/ 을 입력한다. DNS 서버와 웹 서버는 같은 Server(192.168.20.100)다. 일반 DNS(UDP 53)와 일반 HTTP(TCP 80)를 쓴다. 교육용 예제다.',
+      conditions: 'PC1이 브라우저에 http://web.packetlab.example/ 을 입력한다. DNS 서버와 웹 서버는 같은 Server(192.168.20.20)다. 일반 DNS(UDP 53)와 일반 HTTP(TCP 80)를 쓴다. 교육용 예제다.',
       predict: { q: '웹 페이지 내용을 받기 전에, PC1이 반드시 먼저 알아내야 하는 것은?', options: [['ip', '서버의 IP 주소 (DNS)'], ['port', '서버의 운영체제'], ['vlan', '서버의 VLAN 번호'], ['mac', '서버의 MAC 주소']], answer: 'ip',
         why: '사람은 이름(web.packetlab.example)을 쓰지만 패킷은 IP 주소로 간다. 그래서 DNS로 IP를 먼저 알아낸다. 서버의 MAC은 다른 네트워크라 PC1이 직접 알 필요가 없다.' },
       points: ['DNS: 이름 → IP 주소. "어디로 가야 하나?"를 해결한다.', 'TCP: SYN → SYN-ACK → ACK. "상대가 연결을 받을 준비가 됐나?"를 해결한다.', 'HTTP: GET → 200 OK. "무엇을 달라고 할까?"를 해결한다.', '실제 HTTPS나 암호화 DNS에서는 이 내용이 암호화되어 이렇게 보이지 않는다.'],
@@ -242,7 +242,7 @@
       record: '프레임 41, 44, 47: Query A web.packetlab.example → 192.168.20.53, Response 0건' },
     { proto: 'TCP', filter: 'tcp.flags.syn == 1 && tcp.flags.ack == 0', fields: [['tcp.flags.syn / tcp.flags.ack', 'SYN=1·ACK=0 → 연결 요청, 둘 다 1 → SYN-ACK'], ['tcp.flags.reset', '1 = RST(거절)'], ['tcp.analysis.retransmission', 'Wireshark가 재전송으로 표시한 패킷']],
       mistake: 'tcp.flags.syn == 1 필터로 세면 SYN-ACK까지 들어간다. 초기 SYN 수와 섞이지 않게 ACK=0 조건을 함께 쓴다.',
-      record: '프레임 52: SYN → 192.168.20.100:80, 프레임 53: RST, ACK from 192.168.20.100' },
+      record: '프레임 52: SYN → 192.168.20.20:80, 프레임 53: RST, ACK from 192.168.20.20' },
     { proto: 'HTTP', filter: 'http', fields: [['http.request.method', 'GET 등'], ['http.response.code', '200, 404 등']],
       mistake: 'HTTPS는 암호화되어 http 필터에 보이지 않는다. "HTTP가 안 보인다"가 곧 "요청이 없다"는 뜻은 아니다.',
       record: '프레임 58: GET /, 프레임 60: HTTP/1.1 200 OK' }

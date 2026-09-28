@@ -5,9 +5,12 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const E = require('../learning_lab/js/engine.js'), S = require('../learning_lab/js/schema.js');
-const PC1 = '192.168.10.10', SRV = '192.168.20.100', GW = '192.168.10.1';
+const PC1 = '192.168.10.10', SRV = '192.168.20.20', GW = '192.168.10.1';
 
 const CASES = [
+  { file: '../packet_summary.example.json', id: 'EDU-EX-01', cfg: { pc1Gateway: '192.168.10.254' }, test: 'ping_srv', dst: SRV,
+    what: 'Gateway ARP 무응답 (PC1의 Gateway가 잘못 설정된 경우의 관찰)',
+    extraLimits: ['PC1 NIC 한 지점만 관찰 → ARP Request가 어디까지 전달됐는지 모름', 'ARP Reply 부재만으로 원인을 확정할 수 없음'] },
   { file: 'normal.json', id: 'EDU-EX-02', cfg: {}, test: 'ping_srv', dst: SRV,
     what: '정상: 다른 VLAN 서버로 ping' },
   { file: 'dns_no_response.json', id: 'EDU-EX-03', cfg: { dnsService: 'no_response' }, test: 'dns', dst: SRV,

@@ -1,7 +1,7 @@
 {
   "case_id": "EDU-EX-05",
   "source_ip": "192.168.10.10",
-  "destination_ip": "192.168.20.100",
+  "destination_ip": "192.168.20.20",
   "arp_request_count": 1,
   "arp_reply_count": 1,
   "icmp_request_count": 4,
@@ -13,16 +13,16 @@
   "capture_file": null,
   "evidence_source": "example",
   "capture_point": "PC1 NIC (SW-A Fa0/1) — 교육용 모델",
-  "test_description": "[교육용] ping -n 4 192.168.20.100 (교육용 예제 주소, 설계 Gateway 192.168.10.1)",
+  "test_description": "[교육용] ping -n 4 192.168.20.20 (교육용 예제 주소, 설계 Gateway 192.168.10.1)",
   "analysis_scope": {
     "time_window": {
       "start": "EXAMPLE+0.000s",
       "end": "EXAMPLE+3.006s"
     },
     "display_filter": "arp || icmp (capture filter: arp or icmp)",
-    "target_flow": "192.168.10.10 → 192.168.20.100",
+    "target_flow": "192.168.10.10 → 192.168.20.20",
     "arp_targets": [
-      "192.168.20.100",
+      "192.168.20.20",
       "192.168.10.1"
     ],
     "count_basis": {

@@ -28,11 +28,11 @@
   var WRONG_WEB_IP = '192.168.20.200';
 
   var HOSTS = {
-    PC1: { id: 'PC1', label: 'PC1 (개발팀)', ip: '192.168.10.10', mac: '00:10:0a:00:00:10', sw: 'SW-A', port: 'Fa0/1', vlan: 10, mask: 24, gw: '192.168.10.1', dns: '192.168.20.100' },
-    PC2: { id: 'PC2', label: 'PC2 (개발팀)', ip: '192.168.10.11', mac: '00:10:0a:00:00:11', sw: 'SW-B', port: 'Fa0/1', vlan: 10, mask: 24, gw: '192.168.10.1', dns: '192.168.20.100' },
-    PC3: { id: 'PC3', label: 'PC3 (운영팀)', ip: '192.168.20.10', mac: '00:10:14:00:00:10', sw: 'SW-A', port: 'Fa0/2', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.100' },
-    PC4: { id: 'PC4', label: 'PC4 (운영팀)', ip: '192.168.20.11', mac: '00:10:14:00:00:11', sw: 'SW-B', port: 'Fa0/2', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.100' },
-    SRV: { id: 'SRV', label: 'Server (DNS·Web)', ip: '192.168.20.100', mac: '00:10:14:00:01:00', sw: 'SW-B', port: 'Fa0/24', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.100' }
+    PC1: { id: 'PC1', label: 'PC1 (개발팀)', ip: '192.168.10.10', mac: '00:10:0a:00:00:10', sw: 'SW-A', port: 'Fa0/1', vlan: 10, mask: 24, gw: '192.168.10.1', dns: '192.168.20.20' },
+    PC2: { id: 'PC2', label: 'PC2 (개발팀)', ip: '192.168.10.11', mac: '00:10:0a:00:00:11', sw: 'SW-B', port: 'Fa0/1', vlan: 10, mask: 24, gw: '192.168.10.1', dns: '192.168.20.20' },
+    PC3: { id: 'PC3', label: 'PC3 (운영팀)', ip: '192.168.20.10', mac: '00:10:14:00:00:10', sw: 'SW-A', port: 'Fa0/2', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' },
+    PC4: { id: 'PC4', label: 'PC4 (운영팀)', ip: '192.168.20.11', mac: '00:10:14:00:00:11', sw: 'SW-B', port: 'Fa0/2', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' },
+    SRV: { id: 'SRV', label: 'Server (DNS·Web)', ip: '192.168.20.20', mac: '00:10:14:00:01:00', sw: 'SW-B', port: 'Fa0/24', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' }
   };
   var SVIS = {
     SVI10: { id: 'SVI10', label: 'L3SW Vlan10', ip: '192.168.10.1', mac: '00:d0:bc:00:00:0a', vlan: 10, mask: 24, sw: 'L3SW' },
@@ -51,7 +51,7 @@
     pc1AccessVlan: 10,
     trunkBAllowed: [10, 20],
     sviDown: null,
-    pc1Dns: '192.168.20.100',
+    pc1Dns: '192.168.20.20',
     dnsService: 'ok',
     webPort: 'open'
   };
@@ -63,7 +63,7 @@
     pc1AccessVlan: { label: 'SW-A Fa0/1 Access VLAN (PC1 포트)', options: [[10, 'VLAN 10'], [20, 'VLAN 20']] },
     trunkBAllowed: { label: 'L3SW ↔ SW-B Trunk 허용 VLAN', options: [['10,20', '10, 20'], ['20', '20만 (10 누락)'], ['10', '10만 (20 누락)']] },
     sviDown: { label: 'L3SW SVI 상태', options: [['', 'Vlan10·Vlan20 모두 up'], ['10', 'Vlan10 down'], ['20', 'Vlan20 down']] },
-    pc1Dns: { label: 'PC1 DNS 서버 주소', options: [['192.168.20.100', '192.168.20.100 (서버)'], ['192.168.20.53', '192.168.20.53 (존재하지 않는 주소)']] },
+    pc1Dns: { label: 'PC1 DNS 서버 주소', options: [['192.168.20.20', '192.168.20.20 (서버)'], ['192.168.20.53', '192.168.20.53 (존재하지 않는 주소)']] },
     dnsService: { label: 'Server DNS 응답 상태', options: [['ok', '정상 응답'], ['no_response', '응답하지 않음'], ['nxdomain', '오류 응답 (NXDOMAIN)'], ['wrong_answer', '잘못된 IP로 응답']] },
     webPort: { label: 'Server Web(TCP 80) 상태', options: [['open', '열림 (서비스 동작)'], ['closed', '닫힘 (서비스 중지 → RST)'], ['filtered', '응답 없음 (패킷 폐기)']] }
   };
@@ -72,7 +72,7 @@
     ping_pc2: { id: 'ping_pc2', label: '같은 VLAN PC ping (PC1 → PC2)', cmd: 'ping -n 4 192.168.10.11', target: '192.168.10.11', kind: 'ping' },
     ping_gw: { id: 'ping_gw', label: 'Gateway ping (PC1 → 192.168.10.1)', cmd: 'ping -n 4 192.168.10.1', target: '192.168.10.1', kind: 'ping' },
     ping_pc3: { id: 'ping_pc3', label: '다른 VLAN PC ping (PC1 → PC3)', cmd: 'ping -n 4 192.168.20.10', target: '192.168.20.10', kind: 'ping' },
-    ping_srv: { id: 'ping_srv', label: '서버 IP ping (PC1 → Server)', cmd: 'ping -n 4 192.168.20.100', target: '192.168.20.100', kind: 'ping' },
+    ping_srv: { id: 'ping_srv', label: '서버 IP ping (PC1 → Server)', cmd: 'ping -n 4 192.168.20.20', target: '192.168.20.20', kind: 'ping' },
     dns: { id: 'dns', label: 'DNS 조회 (nslookup)', cmd: 'nslookup ' + DOMAIN, target: DOMAIN, kind: 'dns' },
     web: { id: 'web', label: 'TCP/Web 연결 (브라우저)', cmd: 'http://' + DOMAIN + '/', target: DOMAIN, kind: 'web' }
   };
