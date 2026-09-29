@@ -26,6 +26,9 @@
 
 ## 1. Baseline (정상)
 
+> ⚠ **이 Baseline은 다시 캡처해야 합니다 (2026-09-29).** 1번의 포트 연결 정보(`packet_analyst_handoff.md`)를 받기 전의 임시 배치로 캡처했습니다. 당시 배치는 PC2가 SW-B, PC3이 SW-A였고, 도메인은 `web.packetlab.example`였습니다.
+> 1번 명세 배치에서는 PC2가 PC1과 같은 SW1에, PC3이 SW2에 있고, 도메인은 `www.packetlab.test`입니다. 아래 기록은 그때의 **실제 관찰로는 유효**하지만, 팀 명세 기준 Baseline으로는 쓰지 않습니다. 재캡처하면 이 절을 새 결과로 바꿉니다.
+
 | 항목 | 값 |
 |---|---|
 | 캡처 파일 | `normal.pcapng` (PC1 NIC, 58 frames, SHA-256 `a551969c…2b14b`) / `normal_srv.pcapng` (Server NIC, 31 frames, SHA-256 `7d7487a1…bf11`) |

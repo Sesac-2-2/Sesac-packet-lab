@@ -37,8 +37,8 @@
 
 | 파일 | 구분 | 상태 |
 |---|---|---|
-| `normal.pcapng` | 과제 예시 | ✅ 정상 Baseline, PC1 NIC (58 frames, 2026-09-28, 재현 실습망) |
-| `normal_srv.pcapng` | 추가 | ✅ 정상 Baseline, Server NIC (31 frames, 같은 시각) |
+| `normal.pcapng` | 과제 예시 | ⚠ 정상 Baseline, PC1 NIC (58 frames, 2026-09-28). **1번 포트 배치·도메인을 받기 전 배치로 캡처 → 다시 캡처 예정** |
+| `normal_srv.pcapng` | 추가 | ⚠ 정상 Baseline, Server NIC (31 frames, 같은 시각). 위와 같이 다시 캡처 예정 |
 | `fault_<case_id>.pcapng` | 과제 예시 (`fault_*.pcapng`) | ⏳ 실제 캡처 후 생성 (현재 없음) |
 | `recovered_<case_id>.pcapng` | 추가 | ⏳ 복구 후 캡처를 확보한 경우 |
 | `packet_analysis.md` | 과제 예시 | 템플릿 작성됨, 실제 내용 대기 |
@@ -123,7 +123,8 @@
 | Wireshark | 4.6.8 x64, 설치 위치 `E:\Program\Wireshark`, `tshark.exe` 포함 ✅ |
 | Packet Tracer 버전 | 9.0.1.0858 ✅ / pcap 내보내기 메뉴 없음 ✅ |
 | 캡처 환경 | `lab_env/` 재현 실습망 — Windows WSL2 (Ubuntu, VERSION 2)에서 `check`·`up`·`test all` 정상 동작 확인 ✅ (2026-09-28, Linux 쪽 tshark 4.6.4) |
-| 서버 IP / DNS IP / 도메인 / 포트 | Server(DNS/Web) 192.168.20.20 ✅ (1번 명세) / 도메인·웹 포트 ⏳ 명세에 없음 (임시: web.packetlab.example, 80) |
+| 서버 IP / DNS IP / 도메인 / 포트 | 192.168.20.20 / 192.168.20.20 / `www.packetlab.test` / HTTP TCP 80 ✅ (1번 명세) |
+| 포트 연결 | SW1: PC1 Fa0/1, PC2 Fa0/2 · SW2: PC3 Fa0/1, PC4 Fa0/2, Server Fa0/3 · SW1 Gi0/1↔MLS1 Gi0/1, SW2 Gi0/1↔MLS1 Gi0/2 ✅ (1번 명세) / Trunk 허용 VLAN ⏳ 명세에 없음 |
 | 익명 장애 사례 형식 | ⏳ 4번 작업 완료 후 |
 | JSON 필드 합의 | ⏳ 3번 작업 완료 후 |
 | PR | 팀 작업이 모두 끝난 뒤 동시에 `main`으로 PR 예정. 리뷰어 미정 |
