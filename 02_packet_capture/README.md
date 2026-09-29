@@ -37,8 +37,8 @@
 
 | 파일 | 구분 | 상태 |
 |---|---|---|
-| `normal.pcapng` | 과제 예시 | ⚠ 정상 Baseline, PC1 NIC (58 frames, 2026-09-28). **1번 포트 배치·도메인을 받기 전 배치로 캡처 → 다시 캡처 예정** |
-| `normal_srv.pcapng` | 추가 | ⚠ 정상 Baseline, Server NIC (31 frames, 같은 시각). 위와 같이 다시 캡처 예정 |
+| `normal.pcapng` | 과제 예시 | ✅ 정상 Baseline, PC1 NIC (59 frames, 2026-09-29, 1번 명세 배치, 재현 실습망) |
+| `normal_srv.pcapng` | 추가 | ✅ 정상 Baseline, Server NIC (32 frames, 같은 시각) |
 | `fault_<case_id>.pcapng` | 과제 예시 (`fault_*.pcapng`) | ⏳ 실제 캡처 후 생성 (현재 없음) |
 | `recovered_<case_id>.pcapng` | 추가 | ⏳ 복구 후 캡처를 확보한 경우 |
 | `packet_analysis.md` | 과제 예시 | 템플릿 작성됨, 실제 내용 대기 |
