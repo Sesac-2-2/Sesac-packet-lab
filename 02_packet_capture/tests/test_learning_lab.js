@@ -117,10 +117,13 @@ test('Access VLAN 오류: PC1 NIC만 보면 SVI Vlan10 down과 구분되지 않�
   assert.strictEqual(E.signature(at(E.simulate(a, 'ping_srv'), 'PC1')), E.signature(at(E.simulate(b, 'ping_srv'), 'PC1')));
   assert.notStrictEqual(E.signature(at(E.simulate(a, 'ping_srv'), 'PC3')), E.signature(at(E.simulate(b, 'ping_srv'), 'PC3')));
 });
-test('Trunk VLAN 20 누락: 서버 NIC에는 아무것도 도착하지 않고, PC3 NIC에 L3SW의 ARP가 보인다', () => {
+test('Trunk VLAN 20 누락(SW2 쪽): Server·PC3 NIC에는 아무것도 없고, 같은 SW1의 PC2와는 통신된다', () => {
   const r = E.simulate({ trunkBAllowed: [10] }, 'ping_srv');
   assert.strictEqual(at(r, 'SRV').length, 0);
-  assert.ok(at(r, 'PC3').some((e) => e.kind === 'arp_request' && e.srcIp === '192.168.20.1' && e.dstIp === '192.168.20.20'));
+  assert.strictEqual(at(r, 'PC3').length, 0);
+  assert.ok(!r.outcome.success);
+  assert.ok(E.simulate({ trunkBAllowed: [10] }, 'ping_pc2').outcome.success);
+  assert.ok(E.simulate({ trunkAAllowed: [20] }, 'ping_pc2').outcome.success, 'SW1 쪽 Trunk가 빠져도 PC1↔PC2는 SW1 안에서 통신');
 });
 test('Subnet Mask /16: Gateway가 아니라 서버 IP를 직접 ARP로 찾는다', () => {
   const r = at(E.simulate({ pc1Mask: 16 }, 'ping_srv'));
@@ -177,7 +180,8 @@ test('증거가 적으면 복수 후보가 남는다 (사건 4: PC1에서 서버
 test('장비 상태 출력은 정상 설정에서 정상 값을 보여 준다', () => {
   assert.ok(E.statusOutput({}, 'l3_ipint').join('\n').includes('Vlan10                 192.168.10.1    YES manual up'));
   assert.ok(E.statusOutput({ sviDown: 10 }, 'l3_ipint').join('\n').includes('administratively down'));
-  assert.ok(E.statusOutput({ trunkBAllowed: [20] }, 'swb_trunk').join('\n').includes('Gi0/1       20'));
+  assert.ok(E.statusOutput({ trunkAAllowed: [20] }, 'mls_trunk').join('\n').includes('Gi0/1       20'));
+  assert.ok(E.statusOutput({ trunkBAllowed: [10] }, 'mls_trunk').join('\n').includes('Gi0/2       10'));
 });
 
 // ---------------------------------------------------------------- 검증기

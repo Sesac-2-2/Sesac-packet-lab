@@ -69,9 +69,9 @@ def synthetic_full_web():
         pk.append(e_out / IP(src=PC1, dst=SRV) / ICMP(type=8, seq=s))
         pk.append(e_in / IP(src=SRV, dst=PC1) / ICMP(type=0, seq=s))
     pk.append(e_in / IP(src=GW, dst=PC1) / ICMP(type=3, code=0) / IP(src=PC1, dst="192.168.30.1") / ICMP(type=8))
-    pk.append(e_out / IP(src=PC1, dst=SRV) / UDP(sport=50000, dport=53) / DNS(id=1, rd=1, qd=DNSQR(qname="web.packetlab.example")))
-    pk.append(e_in / IP(src=SRV, dst=PC1) / UDP(sport=53, dport=50000) / DNS(id=1, qr=1, qd=DNSQR(qname="web.packetlab.example"),
-                                                                           an=DNSRR(rrname="web.packetlab.example", rdata=SRV)))
+    pk.append(e_out / IP(src=PC1, dst=SRV) / UDP(sport=50000, dport=53) / DNS(id=1, rd=1, qd=DNSQR(qname="www.packetlab.test")))
+    pk.append(e_in / IP(src=SRV, dst=PC1) / UDP(sport=53, dport=50000) / DNS(id=1, qr=1, qd=DNSQR(qname="www.packetlab.test"),
+                                                                           an=DNSRR(rrname="www.packetlab.test", rdata=SRV)))
     pk.append(e_out / IP(src=PC1, dst=SRV) / UDP(sport=50001, dport=53) / DNS(id=2, rd=1, qd=DNSQR(qname="nope.packetlab.example")))
     pk.append(e_in / IP(src=SRV, dst=PC1) / UDP(sport=53, dport=50001) / DNS(id=2, qr=1, rcode=3, qd=DNSQR(qname="nope.packetlab.example")))
     pk.append(e_out / IP(src=PC1, dst=SRV) / TCP(sport=49152, dport=80, flags="S", seq=0))
@@ -240,7 +240,7 @@ def events_to_packets(events):
             elif k == "tcp_rst":
                 p = eth / ip / TCP(sport=80, dport=49152, flags="RA")
             elif k == "http_request":
-                p = eth / ip / TCP(sport=49152, dport=80, flags="PA") / b"GET / HTTP/1.1\r\nHost: web.packetlab.example\r\n\r\n"
+                p = eth / ip / TCP(sport=49152, dport=80, flags="PA") / b"GET / HTTP/1.1\r\nHost: www.packetlab.test\r\n\r\n"
             elif k == "http_response":
                 p = eth / ip / TCP(sport=80, dport=49152, flags="PA") / b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"
             else:
