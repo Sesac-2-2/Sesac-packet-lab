@@ -18,7 +18,7 @@
 
 ## 2. 분석 후 정답 대조 (분석 제출 후에만 작성)
 
-`sudo ./fault.sh reveal <case_id>` 출력으로 채운다.
+`sudo ./fault.sh reveal <case_id>` 출력으로 채운다. "AI diagnosis 1순위"와 일치 판정은 `sudo ./fault.sh export <case_id> --ai-match ... --note ...`에도 같은 내용으로 넣어 Dashboard에 표시한다.
 
 | case_id | 적용 방식 | 실제 원인 | 변경 내용 | 분석 제출 시각 | 공개 시각 | 2번 원인 후보에 포함? | 3번 diagnosis 1순위 |
 |---|---|---|---|---|---|---|---|

@@ -31,6 +31,11 @@ th{font-weight:600;color:var(--muted)}
 td.num{font-variant-numeric:tabular-nums}
 ul{margin:4px 0 8px;padding-left:20px}
 .errors li{color:var(--bad)}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:8px 0 14px;padding:0;list-style:none}
+.flow li{border:1px solid var(--line);border-radius:8px;padding:8px;font-size:.85rem}
+.flow li b{display:block;font-size:.9rem}
+.flow li.done{border-left:4px solid var(--ok)}.flow li.none{border-left:4px dashed var(--line);color:var(--muted)}
+@media(max-width:700px){.flow{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -49,7 +54,7 @@ ul{margin:4px 0 8px;padding-left:20px}
     <label class="drop">
       <input type="file" id="files" accept=".json,application/json" multiple>
       <b>JSON 파일 선택</b><br>
-      <span class="muted">packet_summary_*.json (2번) · diagnosis*.json (3번) · 여러 개 선택 가능. 파일은 브라우저 안에서만 읽고 어디로도 보내지 않는다.</span>
+      <span class="muted">packet_summary_*.json (2번) · diagnosis*.json (3번) · incidents/incident_*.json (4번, 정답 공개 후 fault.sh export) · 여러 개 선택 가능. 파일은 브라우저 안에서만 읽고 어디로도 보내지 않는다.</span>
     </label>
     <p style="margin-top:10px"><button type="button" id="reset">초기화</button></p>
     <ul class="errors" id="errors" aria-live="polite"></ul>
@@ -61,8 +66,10 @@ ul{margin:4px 0 8px;padding-left:20px}
   <h2>이 Dashboard가 보여 주지 않는 것</h2>
   <div class="panel">
     <ul>
-      <li>실제 원인(정답)은 `incident_cases.md` 2절에만 있다. JSON으로 불러오지 않는다.</li>
+      <li>실제 원인은 `incident_*.json`을 불러왔을 때만 표시한다. 이 파일은 `fault.sh`가 분석 제출·정답 공개(reveal) 뒤에만 만든다. 발표에서 Blind Fault 단계를 보여 줄 때는 이 파일을 아직 불러오지 않는다.</li>
       <li>.pcapng를 직접 읽지 않는다. 캡처 → `summarize_pcap.py` → JSON 순서로 만든 결과만 읽는다.</li>
+      <li>AI 진단과 실제 원인의 일치 판정은 사람이 `fault.sh export --ai-match`로 기록한 값이다. Dashboard가 자동으로 판정하지 않는다.</li>
+      <li>Baseline(`normal*` 캡처)은 case_id와 관계없이 모든 사례의 비교 기준 열로 함께 표시한다.</li>
       <li>상태(Baseline/Fault/Recovered)는 `capture_file` 이름의 접두어(normal / fault_ / recovered_)로만 판단한다. 접두어가 없으면 "알 수 없음"이다.</li>
     </ul>
   </div>
@@ -71,8 +78,9 @@ ul{margin:4px 0 8px;padding-left:20px}
 "use strict";
 const COUNTS=[["arp_request_count","ARP Request"],["arp_reply_count","ARP Reply"],["icmp_request_count","ICMP Echo Request"],["icmp_reply_count","ICMP Echo Reply"],["dns_query_count","DNS Query"],["dns_response_count","DNS Response"],["tcp_syn_count","TCP SYN (ACK=0)"],["tcp_syn_ack_count","TCP SYN-ACK"],["tcp_rst_count","TCP RST"]];
 const BASE=["case_id","source_ip","destination_ip","arp_request_count","arp_reply_count","icmp_request_count","icmp_reply_count","dns_query_count","tcp_syn_count","notes"];
-const STAGES=[["1번 Network Architect","network_spec.md","저장소(jae)에 있음. Dashboard에서 읽지 않음"],["2번 Packet Analyst","packet_summary_*.json",null],["3번 AI Engineer","diagnosis.json",null],["4번 Network SRE","incident_cases.md · recovery_log.md","Markdown 기록. Dashboard에서 읽지 않음"]];
-let summaries=[],diagnoses=[],errors=[];
+const STAGES=[["1번 Network Architect","network_spec.md","저장소(jae)에 있음. Dashboard에서 읽지 않음"],["2번 Packet Analyst","packet_summary_*.json",null],["3번 AI Engineer","diagnosis.json",null],["4번 Network SRE","incident_*.json (+ incident_cases.md · recovery_log.md)",null]];
+let summaries=[],diagnoses=[],incidents=[],errors=[];
+const AI_MATCH={match:"일치",partial:"부분 일치",mismatch:"불일치",unchecked:"판정 전"};
 
 function el(tag,attrs,...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs||{}))e.setAttribute(k,v);for(const k of kids){if(k==null)continue;e.append(k instanceof Node?k:String(k));}return e;}
 function stateOf(s){const f=s.capture_file;if(typeof f!=="string")return"알 수 없음";const n=f.split("/").pop();if(n.startsWith("normal"))return"Baseline";if(n.startsWith("fault_"))return"Fault";if(n.startsWith("recovered_"))return"Recovered";return"알 수 없음";}
@@ -81,6 +89,13 @@ function srcChip(src){const ex=src==="example";return el("span",{class:"chip "+(
 
 function classify(obj,name){
   if(Array.isArray(obj)||obj===null||typeof obj!=="object")return errors.push(name+": 최상위가 객체가 아님");
+  if(obj.schema==="packet-ai-incident/0.1"){
+    const miss=["case_id","actual_cause","timeline","ai_match"].filter(k=>!(k in obj));
+    if(miss.length)return errors.push(name+": incident 필수 필드 없음 — "+miss.join(", "));
+    if(!obj.timeline||!obj.timeline.revealed_at)return errors.push(name+": 정답 공개 시각(revealed_at)이 없어 표시하지 않음");
+    incidents.push({name,i:obj});return;
+  }
+  if(typeof obj.schema==="string"&&obj.schema.startsWith("packet-ai-incident"))return errors.push(name+": 지원하지 않는 incident 버전 — "+obj.schema);
   if("hypotheses" in obj||"generated_by" in obj){diagnoses.push({name,d:obj});return;}
   const miss=BASE.filter(k=>!(k in obj));
   if(miss.length)return errors.push(name+": packet_summary 필수 필드 없음 — "+miss.join(", "));
@@ -95,18 +110,31 @@ function renderPipeline(){
     let status=fixed;
     if(i===1)status=summaries.length?`${summaries.length}개 불러옴 (실제 ${summaries.filter(x=>x.s.evidence_source!=="example").length})`:"불러온 파일 없음";
     if(i===2)status=diagnoses.length?`${diagnoses.length}개 불러옴`:"불러온 파일 없음";
+    if(i===3)status=incidents.length?`${incidents.length}개 불러옴 (정답 공개된 사례)`:"불러온 파일 없음";
     p.append(el("div",{class:"stage"},el("b",{},role),el("span",{class:"muted"},file),el("br"),el("span",{},status)));
   });
 }
 
 function renderCases(){
   const box=document.getElementById("cases");box.replaceChildren();
-  const ids=[...new Set([...summaries.map(x=>String(x.s.case_id)),...diagnoses.map(x=>String(x.d.case_id))])];
+  const baselines=summaries.filter(x=>stateOf(x.s)==="Baseline");
+  const ids=[...new Set([...summaries.filter(x=>stateOf(x.s)!=="Baseline").map(x=>String(x.s.case_id)),...diagnoses.map(x=>String(x.d.case_id)),...incidents.map(x=>String(x.i.case_id))])];
+  if(!ids.length&&baselines.length)ids.push(...new Set(baselines.map(x=>String(x.s.case_id))));
   if(!ids.length){box.append(el("p",{class:"muted"},"불러온 데이터 없음. 실제 장애 사례는 아직 진행 전이다."));return;}
   for(const id of ids){
-    const ss=summaries.filter(x=>String(x.s.case_id)===id),ds=diagnoses.filter(x=>String(x.d.case_id)===id);
+    const own=summaries.filter(x=>String(x.s.case_id)===id);
+    const ss=[...baselines.filter(b=>!own.includes(b)),...own],ds=diagnoses.filter(x=>String(x.d.case_id)===id);
+    const inc=incidents.filter(x=>String(x.i.case_id)===id);
     const panel=el("section",{class:"panel","aria-label":"사례 "+id});
     panel.append(el("h3",{},"case_id: "+id));
+    const fault=own.find(x=>stateOf(x.s)==="Fault"),rec=own.find(x=>stateOf(x.s)==="Recovered"),I=inc[0]&&inc[0].i;
+    const stage=(t,done,txt)=>el("li",{class:done?"done":"none"},el("b",{},(done?"✓ ":"○ ")+t),txt);
+    panel.append(el("ol",{class:"flow","aria-label":"장애 발생부터 복구까지 진행 상태"},
+      stage("1. 장애 발생",!!I||!!fault,I?"적용 "+(I.timeline.applied_at??"시각 제공되지 않음"):(fault?"장애 캡처 있음 · 적용 시각은 정답 공개 후 표시":"데이터 없음")),
+      stage("2. 패킷 분석",!!fault,fault?"Fault 캡처 요약: "+fault.name:"Fault packet_summary 없음"),
+      stage("3. AI 진단",ds.length>0,ds.length?"diagnosis "+ds.length+"건":"diagnosis 없음"),
+      stage("4. 정답 대조",!!I,I?"실제 원인 공개 · AI "+(AI_MATCH[I.ai_match&&I.ai_match.result]??"판정 값 제공되지 않음"):"정답 공개 전 (Blind)"),
+      stage("5. 복구·검증",!!(I&&I.timeline.recovered_at)&&!!rec,[I&&I.timeline.recovered_at?"복구 "+I.timeline.recovered_at:"복구 기록 없음",rec?" · Recovered 캡처 있음":" · Recovered 캡처 없음"].join(""))));
     if(ss.length){
       const order={"Baseline":0,"Fault":1,"Recovered":2,"알 수 없음":3};
       ss.sort((a,b)=>order[stateOf(a.s)]-order[stateOf(b.s)]);
@@ -130,6 +158,17 @@ function renderCases(){
       if(rc.length)panel.append(el("p",{},"추가 확인: "),el("ul",{},...rc.map(c=>el("li",{},String(c)))));
       panel.append(el("p",{},"AI root_cause: "+(d.root_cause==null?"null (확정하지 않음)":String(d.root_cause))));
     }
+    for(const {name,i} of inc){
+      const c=i.actual_cause||{},t=i.timeline||{},v=i.config_verify,a=i.ai_match||{};
+      panel.append(el("h3",{},"4번 정답 대조·복구 · "+name));
+      panel.append(el("p",{},el("span",{class:"chip"},"장애 환경: "+(i.fault_environment_note??i.fault_environment??"제공되지 않음")),el("span",{class:"chip"},"적용 방식: "+(i.apply_mode==="random"?"무작위 자체 적용 (약한 Blind)":i.apply_mode==="manual"?"지정 적용 (팀원 적용이면 Blind 유지)":"제공되지 않음"))));
+      const rows=[["실제 원인",c.name],["변경 내용",c.change],["적용 시각",t.applied_at],["정답 공개 시각",t.revealed_at],["복구 시각",t.recovered_at],["AI 진단과 일치",AI_MATCH[a.result]??a.result],["일치 판정 근거",a.note]];
+      panel.append(el("div",{class:"table-wrap"},el("table",{},el("tbody",{},...rows.map(([k,val])=>el("tr",{},el("th",{scope:"row"},k),el("td",{},val==null?"제공되지 않음":String(val))))))));
+      if(v&&Array.isArray(v.items)){
+        panel.append(el("p",{},`설정 검증 (${v.verified_at??"시각 제공되지 않음"}): 정상 ${v.ok} · 다름 ${v.differ}. 설정 검증만으로 복구 완료를 확정하지 않는다 — 위 Recovered 열과 Baseline 비교를 함께 본다.`));
+        panel.append(el("div",{class:"table-wrap"},el("table",{},el("thead",{},el("tr",{},el("th",{scope:"col"},"항목"),el("th",{scope:"col"},"현재"),el("th",{scope:"col"},"명세"),el("th",{scope:"col"},"결과"))),el("tbody",{},...v.items.map(x=>el("tr",{},el("td",{},String(x.item)),el("td",{},String(x.current)),el("td",{},String(x.expected)),el("td",{class:x.match?"real":"bad"},x.match?"✓ 정상":"✗ 다름")))))));
+      }else panel.append(el("p",{class:"muted"},"설정 검증 결과 제공되지 않음"));
+    }
     box.append(panel);
   }
 }
@@ -142,7 +181,7 @@ document.getElementById("files").addEventListener("change",async ev=>{
   }
   ev.target.value="";render();
 });
-document.getElementById("reset").addEventListener("click",()=>{summaries=[];diagnoses=[];errors=[];render();});
+document.getElementById("reset").addEventListener("click",()=>{summaries=[];diagnoses=[];incidents=[];errors=[];render();});
 render();
 </script>
 </body>

@@ -146,10 +146,8 @@ cmd_apply() {
   local mode=manual
   if [[ -z $scenario ]]; then # Blind 모드: 아직 쓰지 않은 시나리오 중 무작위
     mode=random
-    local used pool=() s; used=" $(used_scenarios | tr '\n' ' ') "
-    for s in "${SCENARIOS[@]}"; do [[ $used == *" $s "* ]] || pool+=("$s"); done
-    ((${#pool[@]})) || pool=("${SCENARIOS[@]}")   # 모두 썼으면 전체에서 다시 고름
-    scenario=${pool[RANDOM % ${#pool[@]}]}
+    # 매번 전체 시나리오에서 고른다(중복 허용). 이미 공개된 사례를 빼고 고르면, 공개된 정답만큼 남은 후보가 줄어 Blind가 약해진다.
+    scenario=${SCENARIOS[RANDOM % ${#SCENARIOS[@]}]}
   fi
   [[ -n ${SCENARIO_KO[$scenario]:-} ]] || die "알 수 없는 시나리오: $scenario (./fault.sh scenarios)"
 
@@ -208,7 +206,7 @@ cmd_recover() {
   set_kv "$f" RECOVERED_AT "$(now)"
   say "$id 복구 완료: $(kv "$f" RECOVERED_AT)"
   say "  되돌린 내용: ${SCENARIO_DETAIL[$s]} → 1번 명세 값"
-  say "다음: sudo ./fault.sh verify   (그리고 2번이 같은 테스트로 recovered_$id.pcapng 캡처)"
+  say "다음: sudo ./fault.sh verify $id   (그리고 2번이 같은 테스트로 recovered_$id.pcapng 캡처)"
 }
 
 cmd_close() { # lab.sh down/up으로 이미 정상화된 경우 기록만 닫는다
@@ -221,14 +219,23 @@ cmd_close() { # lab.sh down/up으로 이미 정상화된 경우 기록만 닫는
 
 cmd_verify() { # 1번 명세 값과 현재 설정 비교. 장애가 걸린 상태에서 실행하면 원인이 드러나므로 복구 후에만 쓴다
   need_root
+  local vid="" force=""
+  while (($#)); do case $1 in --force) force=1 ;; FAULT-*) vid=$1 ;; *) die "사용법: sudo ./fault.sh verify [FAULT-01] [--force]" ;; esac; shift; done
+  if [[ -n $vid ]]; then
+    check_case_id "$vid"; [[ -e $(key_file "$vid") ]] || die "$vid 기록이 없습니다."
+    [[ -n $(kv "$(key_file "$vid")" REVEALED_AT || true) ]] || die "$vid 정답 공개 전에는 검증 결과를 사례에 기록하지 않습니다."
+  fi
   local act; act=$(active_case)
-  if [[ -n $act && ${1:-} != --force ]]; then
+  if [[ -n $act && -z $force ]]; then
     local f; f=$(key_file "$act")
     [[ -n $(kv "$f" REVEALED_AT || true) ]] || die "$act 가 적용 중이고 정답 공개 전입니다. verify는 원인을 보여 주므로 복구 후 실행하세요."
   fi
   lab_ready || die "실습망이 없습니다."
-  local h=$TARGET_HOST ok=0 bad=0
-  chk() { if [[ $2 == "$3" ]]; then say "  [정상] $1: $2"; ok=$((ok+1)); else say "  [다름] $1: 현재 '$2' / 명세 '$3'"; bad=$((bad+1)); fi; }
+  local h=$TARGET_HOST ok=0 bad=0 rows=""
+  chk() {
+    local m=0; if [[ $2 == "$3" ]]; then say "  [정상] $1: $2"; ok=$((ok+1)); m=1; else say "  [다름] $1: 현재 '$2' / 명세 '$3'"; bad=$((bad+1)); fi
+    rows+="$1"$'\t'"$2"$'\t'"$3"$'\t'"$m"$'\n'
+  }
   say "== 설정 검증 (기준: topology.conf = 1번 명세)"
   chk "PC1 IP/Mask" "$(ip -n "$h" -o -4 addr show dev eth0 | awk '{print $4}' | head -1)" "${HOST_IP[$h]}"
   chk "PC1 Default Gateway" "$(ip -n "$h" route show default | awk '{print $3}' | head -1)" "${HOST_GW[$h]}"
@@ -245,8 +252,71 @@ cmd_verify() { # 1번 명세 값과 현재 설정 비교. 장애가 걸린 상�
   chk "Server TCP/$WEB_PORT LISTEN" "$(ip netns exec srv ss -Hltn "sport = :$WEB_PORT" | wc -l | tr -d ' ')" "1"
   chk "Server UDP/53 LISTEN" "$(ip netns exec srv ss -Hlun 'sport = :53' | wc -l | tr -d ' ')" "1"
   say "== 결과: 정상 $ok · 다름 $bad"
+  if [[ -n $vid ]]; then
+    local vf; vf=$(key_file "$vid")
+    printf '%s' "$rows" > "$KEY_DIR/$vid.verify.tsv"; chmod 600 "$KEY_DIR/$vid.verify.tsv"
+    set_kv "$vf" VERIFIED_AT "$(now)"; set_kv "$vf" VERIFY_OK "$ok"; set_kv "$vf" VERIFY_BAD "$bad"
+    say "   $vid 사례에 검증 결과를 기록했습니다 (export에 포함)."
+  fi
   say "   설정 검증만으로 복구 완료를 확정하지 않습니다. 패킷 검증은 2번의 recovered 캡처와 Baseline 비교로 합니다."
   ((bad == 0))
+}
+
+cmd_export() { # 정답 공개 후에만: Dashboard가 읽는 incident_<case_id>.json
+  local id=${1:-}; check_case_id "$id"; shift
+  local ai=unchecked note="" out=""
+  while (($#)); do case $1 in
+    --ai-match) ai=${2:-}; shift ;;
+    --note) note=${2:-}; shift ;;
+    --out) out=${2:-}; shift ;;
+    *) die "사용법: sudo ./fault.sh export FAULT-01 [--ai-match match|partial|mismatch|unchecked] [--note 근거] [--out 파일]" ;;
+  esac; shift; done
+  [[ $ai =~ ^(match|partial|mismatch|unchecked)$ ]] || die "--ai-match 값: match | partial | mismatch | unchecked"
+  [[ $ai == unchecked || -n $note ]] || die "--ai-match를 정했으면 --note에 판단 근거를 적으세요 (예: 'diagnosis 1순위 가설과 같은 계층')"
+  local f; f=$(key_file "$id"); [[ -e $f ]] || die "$id 기록이 없습니다."
+  [[ -n $(kv "$f" REVEALED_AT || true) ]] || die "$id 정답 공개 전입니다. export 파일에는 원인이 들어가므로 분석 제출 → reveal 이후에만 만듭니다."
+  [[ -n $out ]] || out="$HERE/incidents/incident_$id.json"
+  mkdir -p "$(dirname "$out")"
+  local s; s=$(kv "$f" SCENARIO)
+  local vt="$KEY_DIR/$id.verify.tsv"; [[ -e $vt ]] || vt=""
+  SCEN="$s" SCEN_KO="${SCENARIO_KO[$s]}" DETAIL="${SCENARIO_DETAIL[$s]}" AI="$ai" NOTE="$note" VT="$vt" ENVF="$f" \
+  python3 - "$out" <<'PY'
+import json, os, sys
+env = {}
+for line in open(os.environ["ENVF"], encoding="utf-8"):
+    k, _, v = line.rstrip("\n").partition("=")
+    env[k] = v or None
+verify = None
+if os.environ["VT"]:
+    items = []
+    for line in open(os.environ["VT"], encoding="utf-8"):
+        if not line.strip():
+            continue
+        name, cur, exp, m = line.rstrip("\n").split("\t")
+        items.append({"item": name, "current": cur, "expected": exp, "match": m == "1"})
+    verify = {"verified_at": env.get("VERIFIED_AT"), "ok": int(env.get("VERIFY_OK") or 0),
+              "differ": int(env.get("VERIFY_BAD") or 0), "items": items}
+doc = {
+    "schema": "packet-ai-incident/0.1",
+    "case_id": env["CASE_ID"],
+    "fault_environment": "linux_lab",
+    "fault_environment_note": "02_packet_capture/lab_env 재현 실습망 (Packet Tracer 아님)",
+    "apply_mode": env.get("MODE"),
+    "blind_note": "팀원 적용(manual)은 분석 담당자에게 원인을 숨김. 무작위 적용(random)은 자체 적용이라 약한 Blind",
+    "actual_cause": {"scenario": os.environ["SCEN"], "name": os.environ["SCEN_KO"], "change": os.environ["DETAIL"]},
+    "timeline": {"applied_at": env.get("APPLIED_AT"), "revealed_at": env.get("REVEALED_AT"),
+                 "recovered_at": env.get("RECOVERED_AT")},
+    "config_verify": verify,
+    "ai_match": {"result": os.environ["AI"], "note": os.environ["NOTE"] or None},
+}
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump(doc, fh, ensure_ascii=False, indent=2)
+    fh.write("\n")
+PY
+  [[ -n ${SUDO_UID:-} ]] && chown "$SUDO_UID:${SUDO_GID:-$SUDO_UID}" "$out" "$(dirname "$out")" 2>/dev/null || true
+  say "$id 내보냄: $out"
+  [[ -n $vt ]] || say "  주의: 설정 검증 결과 없음. 복구 후 sudo ./fault.sh verify $id 를 실행하고 다시 export 하세요."
+  [[ -n $(kv "$f" RECOVERED_AT || true) ]] || say "  주의: 아직 복구 전입니다."
 }
 
 cmd_cases() { # 정답 없이 사례 목록만
@@ -261,7 +331,7 @@ cmd_cases() { # 정답 없이 사례 목록만
 }
 
 cmd_scenarios() {
-  say "지원 시나리오 (--scenario 이름). 무작위 Blind 모드는 이 중 아직 쓰지 않은 것을 고릅니다."
+  say "지원 시나리오 (--scenario 이름). 무작위 Blind 모드는 매번 이 7종 전체에서 고릅니다(중복 가능)."
   local s; for s in "${SCENARIOS[@]}"; do printf '  %-12s %s — %s\n' "$s" "${SCENARIO_KO[$s]}" "${SCENARIO_DETAIL[$s]}"; done
 }
 
@@ -271,12 +341,14 @@ Packet.AI 4번 Network SRE — 재현 실습망 장애 적용·복구 (한 번�
 토폴로지 값: $TOPOLOGY
 정답 보관: $KEY_DIR (저장소 밖, root 전용)
 
-  sudo ./fault.sh apply FAULT-01                   Blind: 무작위 시나리오 적용, 원인은 출력 안 함
+  sudo ./fault.sh apply FAULT-01                   Blind: 전체 7종 중 무작위 적용(중복 가능), 원인 출력 안 함
   sudo ./fault.sh apply FAULT-01 --scenario 이름   지정한 시나리오 적용 (분석 담당자가 아닌 사람이 실행할 때)
   sudo ./fault.sh cases                            사례 목록 (원인 없이 시각만)
   sudo ./fault.sh reveal FAULT-01                  분석 제출 후 정답 공개
   sudo ./fault.sh recover FAULT-01                 복구 (reveal 이후에만. 강제: --force)
-  sudo ./fault.sh verify                           설정이 1번 명세와 같은지 검증 (복구 후)
+  sudo ./fault.sh verify [FAULT-01]                설정이 1번 명세와 같은지 검증 (복구 후). case_id를 주면 결과를 사례에 기록
+  sudo ./fault.sh export FAULT-01 [--ai-match match|partial|mismatch --note 근거]
+                                                   정답 공개 후 Dashboard용 incidents/incident_FAULT-01.json 생성
   sudo ./fault.sh close FAULT-01                   lab.sh down/up으로 이미 정상화한 사례의 기록만 닫기
   ./fault.sh scenarios                             시나리오 목록 (분석 담당자는 분석 전에 보지 않아도 됨)
 
@@ -288,7 +360,7 @@ main() {
   local cmd=${1:-help}; shift || true
   case "$cmd" in
     apply) cmd_apply "$@" ;; reveal) cmd_reveal "$@" ;; recover) cmd_recover "$@" ;;
-    verify) cmd_verify "$@" ;; close) cmd_close "$@" ;; cases) cmd_cases ;;
+    verify) cmd_verify "$@" ;; close) cmd_close "$@" ;; cases) cmd_cases ;; export) cmd_export "$@" ;;
     scenarios) cmd_scenarios ;; help|-h|--help) cmd_help ;;
     *) die "알 수 없는 명령: $cmd (./fault.sh help)" ;;
   esac

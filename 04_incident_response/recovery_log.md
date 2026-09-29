@@ -44,7 +44,7 @@
 
 ## 3. Packet Tracer 쪽 복구 (재현하는 경우에만)
 
-Packet Tracer에서도 같은 장애를 재현했는지는 미결정이다. 재현했다면 IOS 명령과 `show` 결과 스크린샷 위치를 여기에 적는다. 재현 실습망 결과와 섞지 않는다.
+절차는 `packet_tracer_faults.md`를 따른다. 사례마다 적용·복구에 쓴 IOS 명령 또는 GUI 절차, `show` 결과, Simulation Event List 스크린샷 위치를 여기에 적는다. 재현 실습망 결과와 섞지 않는다.
 
 ## 4. Baseline / Fault / Recovered 비교표 (2번이 채움)
 
