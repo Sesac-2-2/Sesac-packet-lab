@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Packet.AI Incident Dashboard</title>
+<style>
+:root{--bg:#f7f7f5;--panel:#fff;--ink:#1d1d1b;--muted:#5f5f5a;--line:#dcdcd6;--accent:#1f5fae;--ok:#1d7a3e;--bad:#b3261e;--warn:#8a5a00;--chip:#eef0f3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151515;--panel:#1e1e1e;--ink:#ececea;--muted:#a3a39d;--line:#34342f;--accent:#7fb0ef;--ok:#6cc58a;--bad:#f08a82;--warn:#e0b45c;--chip:#2a2c30}}
+:root[data-theme="dark"]{--bg:#151515;--panel:#1e1e1e;--ink:#ececea;--muted:#a3a39d;--line:#34342f;--accent:#7fb0ef;--ok:#6cc58a;--bad:#f08a82;--warn:#e0b45c;--chip:#2a2c30}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:1.5rem;margin:0 0 4px}h2{font-size:1.15rem;margin:32px 0 12px}h3{font-size:1rem;margin:0 0 8px}
+p{margin:0 0 8px}.muted{color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.pipeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stage{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--panel)}
+.stage b{display:block}.stage span{font-size:.85rem}
+.chip{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--chip);font-size:.8rem;margin-right:4px}
+.real{color:var(--ok)}.example{color:var(--warn)}.bad{color:var(--bad)}
+label.drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;cursor:pointer}
+label.drop:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
+button{font:inherit;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{font-weight:600;color:var(--muted)}
+td.num{font-variant-numeric:tabular-nums}
+ul{margin:4px 0 8px;padding-left:20px}
+.errors li{color:var(--bad)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Packet.AI Incident Dashboard</h1>
+    <p class="muted">4번 Network SRE 최종 Dashboard. 불러온 JSON 파일에 있는 값만 표시한다. 파일에 없는 값은 "제공되지 않음"으로 표시하고 만들어 채우지 않는다.</p>
+  </header>
+
+  <h2>파이프라인</h2>
+  <div class="pipeline" id="pipeline" aria-label="역할별 산출물 상태"></div>
+
+  <h2>데이터 불러오기</h2>
+  <div class="panel">
+    <label class="drop">
+      <input type="file" id="files" accept=".json,application/json" multiple>
+      <b>JSON 파일 선택</b><br>
+      <span class="muted">packet_summary_*.json (2번) · diagnosis*.json (3번) · 여러 개 선택 가능. 파일은 브라우저 안에서만 읽고 어디로도 보내지 않는다.</span>
+    </label>
+    <p style="margin-top:10px"><button type="button" id="reset">초기화</button></p>
+    <ul class="errors" id="errors" aria-live="polite"></ul>
+  </div>
+
+  <h2>사례</h2>
+  <div id="cases"><p class="muted">불러온 데이터 없음. 실제 장애 사례는 아직 진행 전이다.</p></div>
+
+  <h2>이 Dashboard가 보여 주지 않는 것</h2>
+  <div class="panel">
+    <ul>
+      <li>실제 원인(정답)은 `incident_cases.md` 2절에만 있다. JSON으로 불러오지 않는다.</li>
+      <li>.pcapng를 직접 읽지 않는다. 캡처 → `summarize_pcap.py` → JSON 순서로 만든 결과만 읽는다.</li>
+      <li>상태(Baseline/Fault/Recovered)는 `capture_file` 이름의 접두어(normal / fault_ / recovered_)로만 판단한다. 접두어가 없으면 "알 수 없음"이다.</li>
+    </ul>
+  </div>
+</main>
+<script>
+"use strict";
+const COUNTS=[["arp_request_count","ARP Request"],["arp_reply_count","ARP Reply"],["icmp_request_count","ICMP Echo Request"],["icmp_reply_count","ICMP Echo Reply"],["dns_query_count","DNS Query"],["dns_response_count","DNS Response"],["tcp_syn_count","TCP SYN (ACK=0)"],["tcp_syn_ack_count","TCP SYN-ACK"],["tcp_rst_count","TCP RST"]];
+const BASE=["case_id","source_ip","destination_ip","arp_request_count","arp_reply_count","icmp_request_count","icmp_reply_count","dns_query_count","tcp_syn_count","notes"];
+const STAGES=[["1번 Network Architect","network_spec.md","저장소(jae)에 있음. Dashboard에서 읽지 않음"],["2번 Packet Analyst","packet_summary_*.json",null],["3번 AI Engineer","diagnosis.json",null],["4번 Network SRE","incident_cases.md · recovery_log.md","Markdown 기록. Dashboard에서 읽지 않음"]];
+let summaries=[],diagnoses=[],errors=[];
+
+function el(tag,attrs,...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs||{}))e.setAttribute(k,v);for(const k of kids){if(k==null)continue;e.append(k instanceof Node?k:String(k));}return e;}
+function stateOf(s){const f=s.capture_file;if(typeof f!=="string")return"알 수 없음";const n=f.split("/").pop();if(n.startsWith("normal"))return"Baseline";if(n.startsWith("fault_"))return"Fault";if(n.startsWith("recovered_"))return"Recovered";return"알 수 없음";}
+function countText(s,k){if(!(k in s))return"제공되지 않음";const v=s[k];if(v===null){const r=s.null_reasons&&s.null_reasons[k];return"null — "+(r?String(r):"이유 없음");}return String(v);}
+function srcChip(src){const ex=src==="example";return el("span",{class:"chip "+(ex?"example":"real")},ex?"교육용 예제":("출처: "+(src==null?"제공되지 않음":String(src))));}
+
+function classify(obj,name){
+  if(Array.isArray(obj)||obj===null||typeof obj!=="object")return errors.push(name+": 최상위가 객체가 아님");
+  if("hypotheses" in obj||"generated_by" in obj){diagnoses.push({name,d:obj});return;}
+  const miss=BASE.filter(k=>!(k in obj));
+  if(miss.length)return errors.push(name+": packet_summary 필수 필드 없음 — "+miss.join(", "));
+  const bad=COUNTS.filter(([k])=>k in obj&&obj[k]!==null&&!(Number.isInteger(obj[k])&&obj[k]>=0)).map(([k])=>k);
+  if(bad.length)return errors.push(name+": count 필드가 0 이상의 정수 또는 null이 아님 — "+bad.join(", "));
+  summaries.push({name,s:obj});
+}
+
+function renderPipeline(){
+  const p=document.getElementById("pipeline");p.replaceChildren();
+  STAGES.forEach(([role,file,fixed],i)=>{
+    let status=fixed;
+    if(i===1)status=summaries.length?`${summaries.length}개 불러옴 (실제 ${summaries.filter(x=>x.s.evidence_source!=="example").length})`:"불러온 파일 없음";
+    if(i===2)status=diagnoses.length?`${diagnoses.length}개 불러옴`:"불러온 파일 없음";
+    p.append(el("div",{class:"stage"},el("b",{},role),el("span",{class:"muted"},file),el("br"),el("span",{},status)));
+  });
+}
+
+function renderCases(){
+  const box=document.getElementById("cases");box.replaceChildren();
+  const ids=[...new Set([...summaries.map(x=>String(x.s.case_id)),...diagnoses.map(x=>String(x.d.case_id))])];
+  if(!ids.length){box.append(el("p",{class:"muted"},"불러온 데이터 없음. 실제 장애 사례는 아직 진행 전이다."));return;}
+  for(const id of ids){
+    const ss=summaries.filter(x=>String(x.s.case_id)===id),ds=diagnoses.filter(x=>String(x.d.case_id)===id);
+    const panel=el("section",{class:"panel","aria-label":"사례 "+id});
+    panel.append(el("h3",{},"case_id: "+id));
+    if(ss.length){
+      const order={"Baseline":0,"Fault":1,"Recovered":2,"알 수 없음":3};
+      ss.sort((a,b)=>order[stateOf(a.s)]-order[stateOf(b.s)]);
+      const head=el("tr",{},el("th",{scope:"col"},"필드"),...ss.map(x=>el("th",{scope:"col"},stateOf(x.s)+" · "+x.name)));
+      const rows=COUNTS.map(([k,lab])=>el("tr",{},el("th",{scope:"row"},lab),...ss.map(x=>el("td",{class:"num"},countText(x.s,k)))));
+      const meta=[["출처","evidence_source"],["캡처 파일","capture_file"],["캡처 지점","capture_point"],["흐름","destination_ip"]].map(([lab,k])=>el("tr",{},el("th",{scope:"row"},lab),...ss.map(x=>el("td",{},k==="destination_ip"?`${x.s.source_ip} → ${x.s.destination_ip}`:(x.s[k]==null?"제공되지 않음":String(x.s[k]))))));
+      panel.append(el("p",{},...ss.map(x=>srcChip(x.s.evidence_source))));
+      panel.append(el("div",{class:"table-wrap"},el("table",{},el("thead",{},head),el("tbody",{},...meta,...rows))));
+      for(const x of ss){
+        const lim=Array.isArray(x.s.limitations)?x.s.limitations:[];
+        panel.append(el("p",{class:"muted"},x.name+" 관찰 메모: "+(x.s.notes==null?"제공되지 않음":String(x.s.notes))));
+        if(lim.length)panel.append(el("ul",{},...lim.map(l=>el("li",{},String(l)))));
+      }
+    }else panel.append(el("p",{class:"muted"},"이 case_id의 packet_summary 없음"));
+    for(const {name,d} of ds){
+      panel.append(el("h3",{},"3번 진단 · "+name+" ("+(d.generated_by==null?"생성 방식 제공되지 않음":String(d.generated_by))+")"));
+      if(d.is_example)panel.append(el("p",{class:"example"},"교육용 예제 입력으로 만든 진단 — 실제 판단 근거로 쓰지 않음"));
+      const hs=Array.isArray(d.hypotheses)?d.hypotheses:[];
+      panel.append(el("ul",{},...(hs.length?hs.map(h=>el("li",{},`[${h.layer??"-"}] ${h.description??""} (확신도 ${h.confidence??"제공되지 않음"})`)):[el("li",{},"가설 없음")])));
+      const rc=Array.isArray(d.recommended_checks)?d.recommended_checks:[];
+      if(rc.length)panel.append(el("p",{},"추가 확인: "),el("ul",{},...rc.map(c=>el("li",{},String(c)))));
+      panel.append(el("p",{},"AI root_cause: "+(d.root_cause==null?"null (확정하지 않음)":String(d.root_cause))));
+    }
+    box.append(panel);
+  }
+}
+function renderErrors(){const u=document.getElementById("errors");u.replaceChildren(...errors.map(e=>el("li",{},e)));}
+function render(){renderPipeline();renderCases();renderErrors();}
+
+document.getElementById("files").addEventListener("change",async ev=>{
+  for(const f of ev.target.files){
+    try{classify(JSON.parse(await f.text()),f.name);}catch(e){errors.push(f.name+": JSON으로 읽을 수 없음 — "+e.message);}
+  }
+  ev.target.value="";render();
+});
+document.getElementById("reset").addEventListener("click",()=>{summaries=[];diagnoses=[];errors=[];render();});
+render();
+</script>
+</body>
+</html>
