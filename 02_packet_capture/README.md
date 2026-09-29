@@ -202,3 +202,13 @@ python3 -m unittest discover -s tests -v
 | AI에 정답을 먼저 알려주지 않았는가 | 익명 `case_id`, 원인 암시 파일명 금지, 검증기에서 차단 |
 | 내 출력이 다음 담당자의 입력으로 연결되는가 | `data_contract.md` 초안 작성, 3번과 합의 대기 |
 | 역할을 침범한 기능이 없는가 | AI 진단·장애 주입·복구·Dashboard 구현 없음. 웹앱의 설정 변경은 교육용 모델 안에서만. `lab_env/`의 토폴로지 값은 1번 명세를 받기 전까지의 임시값(`topology.conf`)이며 1번 명세로 교체 예정 |
+
+## 12. 브랜치·커밋 규칙 (2번 작업)
+
+- 작업 브랜치: `feat/2nd-part`. `main`에는 직접 푸시하지 않습니다. 팀 작업이 모두 끝난 뒤 PR로 합칩니다.
+- 커밋 메시지: [Conventional Commits](https://www.conventionalcommits.org/) 형식 `type(scope): 내용`
+  - type: `feat`(기능), `fix`(버그 수정), `docs`(문서), `refactor`(동작 변화 없는 구조 변경), `test`(테스트), `chore`(기타)
+  - scope: `lab_env`, `learning_lab`, `summarize`, `analysis`, `handoff`, `examples`, `capture` 중 하나
+  - 커밋 하나에는 type 하나만 씁니다. 성격이 다른 변경은 나눠서 커밋합니다.
+  - 예: `feat(capture): 1번 명세 배치로 정상 Baseline 재캡처`
+- 2026-09-29 이전 커밋 중 이 규칙과 다른 메시지는 기록을 다시 쓰지 않고 그대로 둡니다. 일부 커밋이 이미 다른 팀원 브랜치(`jae`)에 병합되어 있어서입니다.
