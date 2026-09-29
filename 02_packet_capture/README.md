@@ -49,6 +49,7 @@
 | `wireshark_filters.md` | 추가 | 필터·확인 필드·한계 |
 | `data_contract.md` | 추가 | `packet_summary.json` 필드 정의 (3번과 합의용 초안) |
 | `handoff_to_3_ai_engineer.md` | 추가 | 3번에게 전달하는 입력 데이터 안내와 합의 요청 |
+| `handoff_to_4_sre.md` | 추가 | 4번에게 장애 사례 정보와 재현 실습망 장애 적용 방식 합의 요청 |
 | `packet_summary.example.json` | 추가 | **교육용 예제** (실제 증거 아님) |
 | `summarize_pcap.py` | 추가 | `.pcapng` → `packet_summary.json` 추출·검증 도구 |
 | `tests/` | 추가 | 도구·웹앱 테스트 (합성 데이터는 실행 중에만 생성) |
