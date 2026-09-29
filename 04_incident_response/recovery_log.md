@@ -12,6 +12,16 @@
 - Baseline은 `02_packet_capture/normal.pcapng`(1번 명세 배치로 재캡처한 것)이다.
 - 테스트, 캡처 지점(pc1), ARP 캐시 조건(`lab.sh flush` 후 시작)은 Baseline과 같게 맞춘다.
 
+과제 HTML 단계 7 체크리스트와 이 문서의 대응:
+
+| 과제 단계 7 항목 | 기록 위치 |
+|---|---|
+| 장애 전 증거 저장 | `02_packet_capture/normal.pcapng`, `fault_<case_id>.pcapng` (2번) |
+| 수정 명령/설정 기록 | 2절 "실행한 복구 명령", "되돌린 설정" |
+| 장애 후 ping/DNS/TCP 재검증 | `recovered_<case_id>.pcapng` (2번), 4절 |
+| 정상 패킷과 비교 | 4절 |
+| AI 진단이 실제 원인과 일치했는지 확인 | `incident_cases.md` 2절·3절 |
+
 ## 2. 사례별 기록
 
 ---

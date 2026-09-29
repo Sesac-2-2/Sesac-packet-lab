@@ -28,25 +28,26 @@
 
 ## 3. Incident Report (사례별)
 
-아래 양식을 사례마다 복사한다. 각 칸은 출처 파일을 함께 적는다. 관찰 사실과 해석을 섞지 않는다.
+아래 양식을 사례마다 복사한다. 순서는 과제 HTML "장애 기록" 기준의 흐름(증상 → 관찰한 증거 → 생각한 원인 → 조치 → 복구 확인)을 따른다. 마지막 칸은 과제 단계 7의 "AI 진단이 실제 원인과 일치했는지 확인"이다. 각 칸에 출처 파일을 함께 적고, 관찰 사실과 해석을 섞지 않는다.
 
 ---
 
 ### FAULT-01 Incident Report
 
-| 항목 | 내용 | 출처 |
-|---|---|---|
-| 신고 증상 | | 1절 |
-| 영향 범위 | <예: PC1의 어떤 테스트가 실패했는가> | `packet_analysis.md` |
-| 탐지 방법 | 2번의 테스트 6종 + PC1 캡처 | `fault_FAULT-01.pcapng` |
-| 핵심 패킷 증거 | <프레임 번호·시각·관찰 내용> | `packet_summary_FAULT-01.json` evidence |
-| AI 진단 | <hypotheses, recommended_checks 요약> | `diagnosis.json` |
-| 실제 원인 | | 2절 |
-| 조치 | | `recovery_log.md` |
-| 복구 검증 (설정) | `fault.sh verify` 결과 | `recovery_log.md` |
-| 복구 검증 (패킷) | Baseline / Fault / Recovered 비교 | `recovery_log.md` 4절 |
-| 분석 과정 평가 | 원인이 2번 후보에 있었는가, 3번 진단이 맞았는가, 어떤 증거가 결정적이었는가 | |
-| 재발 방지 | | |
-| 한계 | 캡처 지점, 재현 실습망과 Packet Tracer의 차이 (`handoff_to_4_sre.md` 9절) | |
+| 단계 | 항목 | 내용 | 출처 |
+|---|---|---|---|
+| 1. 증상 | 신고 증상 | | 1절 |
+| | 영향 범위 | <예: PC1의 테스트 6종 중 실패한 것> | `packet_analysis.md` |
+| 2. 관찰한 증거 | 탐지 방법 | 2번의 테스트 6종 + PC1 캡처 | `fault_FAULT-01.pcapng` |
+| | 핵심 패킷 증거 | <프레임 번호·시각·관찰 내용> | `packet_summary_FAULT-01.json` evidence |
+| 3. 생각한 원인 | 2번 원인 후보 | | `packet_analysis.md` |
+| | AI 진단 | <hypotheses, recommended_checks 요약> | `diagnosis.json` |
+| | 실제 원인 (분석 후 공개) | | 2절 |
+| 4. 조치 | 수정 명령/설정 | | `recovery_log.md` |
+| 5. 복구 확인 | 설정 검증 | `fault.sh verify` 결과 | `recovery_log.md` |
+| | ping/DNS/TCP 재검증 · 정상 패킷과 비교 | Baseline / Fault / Recovered 비교 | `recovery_log.md` 4절 |
+| | AI 진단과 실제 원인 일치 여부 | <일치 / 부분 일치 / 불일치 — 근거> | 2절 |
+| 기타 | 재발 방지 | | |
+| | 한계 | 캡처 지점, 재현 실습망과 Packet Tracer의 차이 (`handoff_to_4_sre.md` 9절) | |
 
 ---

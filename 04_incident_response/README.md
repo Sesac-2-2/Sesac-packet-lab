@@ -5,16 +5,16 @@
 
 ## 1. 4번이 하는 일과 산출물
 
-과제 HTML(`packet_ai_미션.html`)은 저장소에 없다. 아래 요구사항은 `02_packet_capture/handoff_to_4_sre.md` 11절의 원문 요약만 근거로 한다. 과제 HTML 원문과 대조하지 않았다.
+근거: 과제 HTML(`packet_ai_미션.html`) 원문 (2026-09-29 대조). 4번 카드의 할 일 5개와 "개별 작업 기록 예시" 파일 3개를 따른다. 과제는 이 파일들을 **예시**로 제시한다(의무 파일명 아님).
 
-| 과제 요구 (11절 요약) | 이 폴더의 파일 | 상태 |
+| 과제 4번 할 일 (원문) | 이 폴더의 파일 | 상태 |
 |---|---|---|
 | 장애 시나리오 설계, 원인을 숨긴 장애 준비 | `fault.sh`, `incident_cases.md` 1~2절 | 도구 완료 · 실습망 실행 검증 전 |
 | 복구 전/후 검증 | `fault.sh recover` / `verify`, `recovery_log.md` | 도구 완료 · 기록 대기 |
 | Incident Report | `incident_cases.md` 3절 (사례별 보고) | 양식 완료 · 내용 대기 |
 | 최종 Dashboard | `dashboard.html` | 완료 · 실제 데이터 대기 |
 
-**파일명 불일치:** 루트 `README.md`(jae 브랜치)는 4번 산출물을 `incident_report.html`로, 11절 요약은 `incident_cases.md`, `recovery_log.md`, `dashboard.html`로 적는다. 11절 이름을 따랐다. 팀 합의가 필요하다.
+**파일명 두 가지가 과제 HTML 안에 함께 있다.** 4번 카드는 `incident_cases.md`, `recovery_log.md`, `dashboard.html`을, "조원 간 공유 Pipeline" 그림은 4번 출력을 `incident_report.html`로 적는다. 루트 `README.md`(jae 브랜치)는 Pipeline 그림을 따랐다. 현재는 카드의 3개 파일만 만들었다. `incident_report.html`을 따로 둘지는 미결정이다.
 
 ## 2. 파이프라인에서의 위치
 
@@ -73,7 +73,7 @@ sudo ./lab.sh capture stop
 
 ## 5. 지원 시나리오
 
-`./fault.sh scenarios`로 확인한다. 과제 11절이 예로 든 6종과 권장 시나리오 표의 SVI Down을 모두 넣었다. **이 7종을 과제의 공식 장애 목록으로 보지 않는다.** 실제로 몇 건을 쓸지는 미결정이다.
+`./fault.sh scenarios`로 확인한다. 과제 수행 단계 3의 장애 A~F 6종과, 권장 장애 시나리오 표(F01~F06)에만 있는 SVI Down을 합쳤다. 반대로 Subnet Mask 오류는 단계 3에만 있고 권장 표에는 없다. **이 7종을 과제의 공식 장애 목록으로 보지 않는다.** 실제로 몇 건을 쓸지는 미결정이다.
 
 | 이름 | 장애 | 재현 실습망에서 바꾸는 값 |
 |---|---|---|
