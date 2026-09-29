@@ -5,16 +5,16 @@
 
 ## 1. 4번이 하는 일과 산출물
 
-근거: 과제 HTML(`packet_ai_미션.html`) 원문 (2026-09-29 대조). 4번 카드의 할 일 5개와 "개별 작업 기록 예시" 파일 3개를 따른다. 과제는 이 파일들을 **예시**로 제시한다(의무 파일명 아님).
+근거: 과제 HTML(저장소 루트 `packet_ai_미션.html`) 원문 (2026-09-29 대조). 4번 카드의 할 일 5개와 "개별 작업 기록 예시" 파일 3개를 따른다. 과제는 이 파일들을 **예시**로 제시한다(의무 파일명 아님).
 
 | 과제 4번 할 일 (원문) | 이 폴더의 파일 | 상태 |
 |---|---|---|
 | 장애 시나리오 설계, 원인을 숨긴 장애 준비 | `fault.sh`, `incident_cases.md` 1~2절 | 도구 완료 · 실습망 실행 검증 전 |
 | 복구 전/후 검증 | `fault.sh recover` / `verify`, `recovery_log.md` | 도구 완료 · 기록 대기 |
 | Incident Report | `incident_cases.md` 3절 (사례별 보고) | 양식 완료 · 내용 대기 |
-| 최종 Dashboard | `dashboard.html` | 완료 · 실제 데이터 대기 |
+| 최종 Dashboard (Incident Report 화면 겸함) | `dashboard.html` | 완료 · 실제 데이터 대기 |
 
-**파일명 두 가지가 과제 HTML 안에 함께 있다.** 4번 카드는 `incident_cases.md`, `recovery_log.md`, `dashboard.html`을, "조원 간 공유 Pipeline" 그림은 4번 출력을 `incident_report.html`로 적는다. 루트 `README.md`(jae 브랜치)는 Pipeline 그림을 따랐다. 현재는 카드의 3개 파일만 만들었다. `incident_report.html`을 따로 둘지는 미결정이다.
+**파일명 두 가지가 과제 HTML 안에 함께 있다.** 4번 카드는 `incident_cases.md`, `recovery_log.md`, `dashboard.html`을, "조원 간 공유 Pipeline" 그림은 4번 출력을 `incident_report.html`로 적는다. 루트 `README.md`(jae 브랜치)는 Pipeline 그림을 따랐다. **결정 (2026-09-29):** `incident_report.html`을 따로 만들지 않고 `dashboard.html`이 Pipeline 그림의 4번 출력(Incident Report 화면)을 겸한다. 사례별 Incident Report 원문은 `incident_cases.md` 3절에 둔다.
 
 ## 2. 파이프라인에서의 위치
 
