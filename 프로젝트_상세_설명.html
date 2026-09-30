@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Packet.AI 프로젝트 안내</title>
+  <style>
+    :root { color-scheme: light; --ink: #152033; --muted: #526174; --line: #d9e1ea; --bg: #f5f8fc; --card: #fff; --accent: #146c94; --accent-soft: #e6f5fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--bg); font-family: "Noto Sans KR", "Malgun Gothic", Arial, sans-serif; line-height: 1.7; }
+    header { padding: 64px 24px 52px; color: #fff; background: linear-gradient(135deg, #073b5c, #146c94); }
+    header > div, main { max-width: 1024px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: clamp(2rem, 5vw, 3.5rem); letter-spacing: -.04em; }
+    h2 { margin-top: 0; font-size: 1.45rem; letter-spacing: -.02em; }
+    h3 { font-size: 1.1rem; }
+    .subtitle { margin: 0; max-width: 760px; opacity: .92; font-size: 1.12rem; }
+    main { padding: 32px 24px 56px; }
+    section { margin: 24px 0; padding: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 5px 18px rgba(24, 49, 75, .05); }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0 4px; }
+    .step { position: relative; min-height: 115px; padding: 18px; border-radius: 12px; background: var(--accent-soft); }
+    .step strong { display: block; color: var(--accent); font-size: .93rem; }
+    .step span { display: block; margin-top: 7px; font-size: .9rem; line-height: 1.45; }
+    .step:not(:last-child)::after { position: absolute; top: 47%; right: -13px; z-index: 1; color: var(--accent); content: "→"; font-weight: bold; font-size: 1.25rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .94rem; }
+    th, td { padding: 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #174664; background: #f1f7fa; }
+    code { padding: 2px 5px; color: #084d73; background: #edf5f8; border-radius: 4px; font-family: Consolas, monospace; }
+    ol, ul { padding-left: 1.25rem; }
+    .note { padding: 16px 18px; color: #174664; background: #eef8fc; border-left: 4px solid var(--accent); border-radius: 6px; }
+    footer { color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 720px) { .flow { grid-template-columns: 1fr 1fr; } .step:nth-child(2)::after { content: ""; } .step:nth-child(1)::after, .step:nth-child(3)::after { right: -12px; } section { padding: 22px; } th, td { padding: 9px; } }
+    @media (max-width: 420px) { .flow { grid-template-columns: 1fr; } .step::after { content: "" !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Packet.AI</h1>
+      <p class="subtitle">패킷 증거를 바탕으로 네트워크 장애를 진단하고, 복구 후 다시 검증하는 4인 협업 실습 프로젝트</p>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>프로젝트는 무엇을 하나요?</h2>
+      <p>Packet.AI는 사내 네트워크에서 발생하는 접속 장애를 정상 상태와 비교해 분석하는 프로젝트입니다. 단순히 증상만 보고 원인을 추측하지 않고, ARP·ICMP·DNS·TCP·HTTP 패킷에서 관찰한 사실을 근거로 원인 후보를 좁힙니다. AI는 진단을 보조하고, 마지막에는 SRE가 실제 복구와 재검증을 수행합니다.</p>
+      <div class="flow">
+        <div class="step"><strong>1. Network Architect</strong><span>정상 네트워크의 주소, VLAN, 장비 연결 기준을 설계합니다.</span></div>
+        <div class="step"><strong>2. Packet Analyst</strong><span>정상·장애 패킷을 캡처하고 관찰값을 JSON으로 정리합니다.</span></div>
+        <div class="step"><strong>3. AI Engineer</strong><span>증거를 바탕으로 원인 후보와 추가 확인 방법을 제안합니다.</span></div>
+        <div class="step"><strong>4. Network SRE</strong><span>장애를 재현·복구하고 복구 결과를 보고합니다.</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>왜 이런 방식으로 하나요?</h2>
+      <p>"웹사이트에 접속할 수 없다"는 하나의 증상에도 DNS 설정 오류, 기본 게이트웨이 오류, VLAN 연결 오류, 서버 서비스 중지처럼 여러 원인이 있을 수 있습니다. 증상만으로 한 원인을 단정하면 잘못된 조치로 시간을 잃을 수 있습니다.</p>
+      <ul>
+        <li><strong>증거 기반 판단:</strong> 패킷에 실제로 무엇이 보였는지부터 확인합니다.</li>
+        <li><strong>정상 기준선 비교:</strong> 장애 패킷만 보지 않고, 같은 조건의 정상 패킷과 첫 차이를 찾습니다.</li>
+        <li><strong>안전한 AI 활용:</strong> AI는 확정 대신 근거·후보·추가 점검 사항을 제시합니다.</li>
+        <li><strong>복구 검증:</strong> 설정 변경 뒤 동일한 테스트를 반복해 서비스 흐름이 회복됐는지 확인합니다.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>역할별 작업과 산출물</h2>
+      <table>
+        <thead><tr><th>역할</th><th>폴더</th><th>주요 작업</th><th>다음 단계에 전달하는 것</th></tr></thead>
+        <tbody>
+          <tr><td>1. Network Architect</td><td><code>01_network_design/</code></td><td>IP, VLAN, 서버, 스위치·L3 인터페이스 구조와 Packet Tracer 설정을 작성합니다.</td><td><code>network_spec.md</code>, 장비 설정 파일</td></tr>
+          <tr><td>2. Packet Analyst</td><td><code>02_packet_capture/</code></td><td>정상·장애 캡처, Wireshark 비교, 패킷 통계와 관찰 사실의 구조화를 담당합니다.</td><td><code>.pcapng</code>, <code>packet_analysis.md</code>, <code>packet_summary.json</code></td></tr>
+          <tr><td>3. AI Engineer</td><td><code>03_packet_ai/</code></td><td>패킷 요약에서 장애 후보, 근거, 다음 확인 방법을 생성하는 분석기를 구현합니다.</td><td><code>diagnosis.json</code></td></tr>
+          <tr><td>4. Network SRE</td><td><code>04_incident_response/</code></td><td>장애 적용·복구, 설정 검증, Incident Report와 Dashboard 작성을 담당합니다.</td><td>복구 기록, Incident Report, Dashboard 데이터</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>실제 분석 흐름</h2>
+      <ol>
+        <li><strong>정상 Baseline 확보</strong> — 정상 상태에서 PC가 서버와 통신할 때의 ARP, DNS, TCP 흐름을 캡처합니다.</li>
+        <li><strong>Blind Fault 적용</strong> — 분석자는 원인을 모르는 상태에서 익명 사례 번호와 증상만 받습니다.</li>
+        <li><strong>동일 조건으로 캡처</strong> — 정상 때와 같은 테스트, 캡처 위치, 필터, 캐시 조건으로 장애 패킷을 수집합니다.</li>
+        <li><strong>JSON 요약 생성</strong> — 패킷 수, DNS 응답, TCP SYN/SYN-ACK/RST, 관찰 한계 등을 구조화합니다.</li>
+        <li><strong>AI 진단</strong> — AI가 근거 기반 후보와 추가로 확인할 장비·패킷을 제안합니다.</li>
+        <li><strong>정답 공개·복구·재검증</strong> — SRE가 원인을 확인해 복구하고 동일 테스트로 결과를 검증합니다.</li>
+      </ol>
+      <p class="note"><strong>중요:</strong> 값이 <code>0</code>이면 해당 항목을 관찰했지만 패킷이 없었다는 뜻입니다. <code>null</code>은 수집하지 못했거나 판단할 수 없다는 뜻입니다. 이 둘을 구분해야 AI가 "확인되지 않은 실패"를 장애로 오해하지 않습니다.</p>
+    </section>
+
+    <section>
+      <h2>핵심 구성 요소</h2>
+      <h3>패킷 분석과 교육용 실습</h3>
+      <p><code>02_packet_capture/</code>에는 정상 Baseline 캡처, pcapng에서 JSON을 만드는 <code>summarize_pcap.py</code>, Linux 재현 실습망(<code>lab_env/</code>), ARP·DNS·TCP·VLAN을 학습하는 웹앱(<code>learning_lab/</code>)이 있습니다. 교육용 예제는 실제 장애 증거와 분리해 관리합니다.</p>
+      <h3>AI 진단 보조</h3>
+      <p><code>03_packet_ai/analyzer.py</code>는 JSON을 읽고 규칙 기반 또는 선택적 AI 기반으로 진단합니다. 결과에는 관찰 근거, 원인 후보, 확신 수준, 추가 확인 항목이 담기며, AI가 패킷에 없는 사실을 단정하지 않도록 설계했습니다.</p>
+      <h3>장애 대응과 보고</h3>
+      <p><code>04_incident_response/fault.sh</code>는 실습망 장애의 적용·공개·복구·검증을 지원합니다. <code>dashboard.html</code>은 패킷 요약, AI 진단, 복구 기록을 한 화면에서 확인하는 Incident Report 역할을 겸합니다.</p>
+    </section>
+
+    <section>
+      <h2>팀원이 시작하는 추천 순서</h2>
+      <ol>
+        <li><code>01_network_design/network_spec.md</code>로 네트워크 기준을 이해합니다.</li>
+        <li><code>02_packet_capture/learning_lab/index.html</code>을 열어 패킷 흐름과 장애 사례를 학습합니다.</li>
+        <li>WSL2 재현 실습망에서 정상 Baseline을 캡처합니다.</li>
+        <li>익명 장애를 적용하고 캡처·JSON 요약·AI 분석을 차례로 수행합니다.</li>
+        <li>원인을 공개한 뒤 복구하고, 같은 테스트로 재검증합니다.</li>
+        <li>복구 기록과 Dashboard로 증거와 결과를 공유합니다.</li>
+      </ol>
+    </section>
+    <footer>Packet.AI · 네트워크 장애를 추측이 아닌 증거로 다루는 실습 프로젝트</footer>
+  </main>
+</body>
+</html>
