@@ -16,14 +16,17 @@
 ## 1. 무엇을 만드나
 
 ```
-                         [l3] L3SW  (bridge + SVI: vlan10 192.168.10.1 / vlan20 192.168.20.1)
-                          ga │ Trunk 10,20        gb │ Trunk 10,20
-                    ┌────────┘                       └────────┐
-                 [swa] SW-A                                [swb] SW-B
-             p1 │ VLAN10   p2 │ VLAN20          p1 │ VLAN10  p2 │ VLAN20  p24 │ VLAN20
-             [pc1]          [pc3]               [pc2]        [pc4]        [srv] DNS + Web
-         192.168.10.10  192.168.20.10       192.168.10.11 192.168.20.11  192.168.20.20
+                       [mls1] MLS1 (L3 스위치: bridge + SVI  vlan10 192.168.10.1 / vlan20 192.168.20.1)
+                     gi0_1 │ Trunk                      gi0_2 │ Trunk
+                     gi0_1 │                            gi0_1 │
+                    [sw1] SW1                           [sw2] SW2
+             fa0_1 │ VLAN10   fa0_2 │ VLAN10     fa0_1 │ VLAN20  fa0_2 │ VLAN20  fa0_3 │ VLAN20
+                [pc1]          [pc2]               [pc3]         [pc4]          [srv] DNS + Web
+           192.168.10.10  192.168.10.11       192.168.20.10  192.168.20.11   192.168.20.20
 ```
+(1번 `network_spec.md`와 `packet_analyst_handoff.md` 기준. Linux 인터페이스 이름에 `/`를 쓸 수 없어 `Fa0/1` → `fa0_1`로 적습니다.)
+
+> **이 배치에서 알아 둘 점**: SW1에는 VLAN 10만, SW2에는 VLAN 20만 있습니다. 그래서 PC1↔PC2는 SW1 안에서 끝나고 **Trunk를 지나지 않습니다.** 다른 VLAN(PC3, Server)으로 가는 통신만 Trunk와 MLS1을 지납니다.
 
 | 과제 구성 요소 | 이 환경에서 대응하는 것 | 정식 용어 |
 |---|---|---|
@@ -33,7 +36,7 @@
 | Access Port | 포트에 VLAN 하나를 태그 없이 할당 | PVID + untagged |
 | Trunk | 포트에 여러 VLAN을 태그 붙여 허용 | 802.1Q tagged |
 | L3 스위치의 SVI | 브리지 위의 VLAN 인터페이스 + 라우팅 | VLAN interface + `ip_forward` |
-| DNS 서버 | `dnsmasq` (`web.packetlab.example` → 192.168.20.20) | |
+| DNS 서버 | `dnsmasq` (`www.packetlab.test` → 192.168.20.20) | |
 | Web 서버 | `python3 -m http.server 80` | |
 
 - 주소·VLAN·포트 배치는 `topology.conf`에서 읽습니다. IP/VLAN은 1번 명세를 반영했습니다(Server = 192.168.20.20). 명세가 바뀌면 이 파일만 바꿉니다. `lab.sh`는 고치지 않아도 됩니다.
@@ -90,7 +93,7 @@ sudo ./lab.sh capture stop all
 cd ..
 python3 summarize_pcap.py extract fault_<case_id>.pcapng --case-id <case_id> \
   --source-ip 192.168.10.10 --destination-ip 192.168.20.20 --next-hop 192.168.10.1 \
-  --capture-point "PC1 NIC (재현 실습망 pc1 eth0, swa p1 Access VLAN 10)" \
+  --capture-point "PC1 NIC (재현 실습망 pc1 eth0, SW1 Fa0/1 Access VLAN 10)" \
   --test-description "<시각> ping -c 4 192.168.20.20" --start <초> --end <초> \
   --limitation "별도 Linux 재현 환경(network namespace)에서 캡처. Packet Tracer 내부 트래픽 아님" \
   -o packet_summary_<case_id>.json
@@ -122,9 +125,9 @@ sudo ./lab.sh capture stop all
 | Cisco IOS / Windows | 이 환경 |
 |---|---|
 | `ipconfig /all` | `ip -n pc1 -br addr`, `ip -n pc1 route`, `/etc/netns/pc1/resolv.conf` |
-| `show vlan brief` | `ip netns exec swa bridge vlan show` (PVID = Access VLAN) |
-| `show interfaces trunk` | `ip netns exec l3 bridge vlan show` |
-| `show ip interface brief` | `ip -n l3 -br addr show type vlan` |
+| `show vlan brief` | `ip netns exec sw1 bridge vlan show` (PVID = Access VLAN) |
+| `show interfaces trunk` | `ip netns exec mls1 bridge vlan show` |
+| `show ip interface brief` | `ip -n mls1 -br addr show type vlan` |
 | 서버 서비스 상태 | `ip netns exec srv ss -ltnu` |
 
 ## 7. 이 환경의 한계 (분석 문서에 함께 적기)

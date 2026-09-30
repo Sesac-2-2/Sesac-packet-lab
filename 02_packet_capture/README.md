@@ -37,8 +37,8 @@
 
 | 파일 | 구분 | 상태 |
 |---|---|---|
-| `normal.pcapng` | 과제 예시 | ✅ 정상 Baseline, PC1 NIC (58 frames, 2026-09-28, 재현 실습망) |
-| `normal_srv.pcapng` | 추가 | ✅ 정상 Baseline, Server NIC (31 frames, 같은 시각) |
+| `normal.pcapng` | 과제 예시 | ✅ 정상 Baseline, PC1 NIC (59 frames, 2026-09-29, 1번 명세 배치, 재현 실습망) |
+| `normal_srv.pcapng` | 추가 | ✅ 정상 Baseline, Server NIC (32 frames, 같은 시각) |
 | `fault_<case_id>.pcapng` | 과제 예시 (`fault_*.pcapng`) | ⏳ 실제 캡처 후 생성 (현재 없음) |
 | `recovered_<case_id>.pcapng` | 추가 | ⏳ 복구 후 캡처를 확보한 경우 |
 | `packet_analysis.md` | 과제 예시 | 템플릿 작성됨, 실제 내용 대기 |
@@ -49,6 +49,7 @@
 | `wireshark_filters.md` | 추가 | 필터·확인 필드·한계 |
 | `data_contract.md` | 추가 | `packet_summary.json` 필드 정의 (3번과 합의용 초안) |
 | `handoff_to_3_ai_engineer.md` | 추가 | 3번에게 전달하는 입력 데이터 안내와 합의 요청 |
+| `handoff_to_4_sre.md` | 추가 | 4번에게 장애 사례 정보와 재현 실습망 장애 적용 방식 합의 요청 |
 | `packet_summary.example.json` | 추가 | **교육용 예제** (실제 증거 아님) |
 | `summarize_pcap.py` | 추가 | `.pcapng` → `packet_summary.json` 추출·검증 도구 |
 | `tests/` | 추가 | 도구·웹앱 테스트 (합성 데이터는 실행 중에만 생성) |
@@ -123,7 +124,8 @@
 | Wireshark | 4.6.8 x64, 설치 위치 `E:\Program\Wireshark`, `tshark.exe` 포함 ✅ |
 | Packet Tracer 버전 | 9.0.1.0858 ✅ / pcap 내보내기 메뉴 없음 ✅ |
 | 캡처 환경 | `lab_env/` 재현 실습망 — Windows WSL2 (Ubuntu, VERSION 2)에서 `check`·`up`·`test all` 정상 동작 확인 ✅ (2026-09-28, Linux 쪽 tshark 4.6.4) |
-| 서버 IP / DNS IP / 도메인 / 포트 | Server(DNS/Web) 192.168.20.20 ✅ (1번 명세) / 도메인·웹 포트 ⏳ 명세에 없음 (임시: web.packetlab.example, 80) |
+| 서버 IP / DNS IP / 도메인 / 포트 | 192.168.20.20 / 192.168.20.20 / `www.packetlab.test` / HTTP TCP 80 ✅ (1번 명세) |
+| 포트 연결 | SW1: PC1 Fa0/1, PC2 Fa0/2 · SW2: PC3 Fa0/1, PC4 Fa0/2, Server Fa0/3 · SW1 Gi0/1↔MLS1 Gi0/1, SW2 Gi0/1↔MLS1 Gi0/2 ✅ (1번 명세) / Trunk 허용 VLAN ⏳ 명세에 없음 |
 | 익명 장애 사례 형식 | ⏳ 4번 작업 완료 후 |
 | JSON 필드 합의 | ⏳ 3번 작업 완료 후 |
 | PR | 팀 작업이 모두 끝난 뒤 동시에 `main`으로 PR 예정. 리뷰어 미정 |
@@ -201,3 +203,13 @@ python3 -m unittest discover -s tests -v
 | AI에 정답을 먼저 알려주지 않았는가 | 익명 `case_id`, 원인 암시 파일명 금지, 검증기에서 차단 |
 | 내 출력이 다음 담당자의 입력으로 연결되는가 | `data_contract.md` 초안 작성, 3번과 합의 대기 |
 | 역할을 침범한 기능이 없는가 | AI 진단·장애 주입·복구·Dashboard 구현 없음. 웹앱의 설정 변경은 교육용 모델 안에서만. `lab_env/`의 토폴로지 값은 1번 명세를 받기 전까지의 임시값(`topology.conf`)이며 1번 명세로 교체 예정 |
+
+## 12. 브랜치·커밋 규칙 (2번 작업)
+
+- 작업 브랜치: `feat/2nd-part`. `main`에는 직접 푸시하지 않습니다. 팀 작업이 모두 끝난 뒤 PR로 합칩니다.
+- 커밋 메시지: [Conventional Commits](https://www.conventionalcommits.org/) 형식 `type(scope): 내용`
+  - type: `feat`(기능), `fix`(버그 수정), `docs`(문서), `refactor`(동작 변화 없는 구조 변경), `test`(테스트), `chore`(기타)
+  - scope: `lab_env`, `learning_lab`, `summarize`, `analysis`, `handoff`, `examples`, `capture` 중 하나
+  - 커밋 하나에는 type 하나만 씁니다. 성격이 다른 변경은 나눠서 커밋합니다.
+  - 예: `feat(capture): 1번 명세 배치로 정상 Baseline 재캡처`
+- 2026-09-29 이전 커밋 중 이 규칙과 다른 메시지는 기록을 다시 쓰지 않고 그대로 둡니다. 일부 커밋이 이미 다른 팀원 브랜치(`jae`)에 병합되어 있어서입니다.

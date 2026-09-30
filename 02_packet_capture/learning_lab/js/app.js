@@ -77,14 +77,14 @@
   function setNext(text) { document.getElementById('nextAction').textContent = text; }
 
   // ---------------------------------------------------------------- topology
-  var POS = { L3SW: [390, 50], 'SW-A': [160, 146], 'SW-B': [560, 146], PC1: [78, 246], PC3: [242, 246], PC2: [418, 246], PC4: [560, 246], SRV: [702, 246] };
-  var LINKS = [['L3SW', 'SW-A', 'trunk'], ['L3SW', 'SW-B', 'trunk'], ['SW-A', 'PC1'], ['SW-A', 'PC3'], ['SW-B', 'PC2'], ['SW-B', 'PC4'], ['SW-B', 'SRV']];
-  function norm(x) { return /^SVI/.test(x) ? 'L3SW' : x; }
-  function swOf(x) { return E.HOSTS[x] ? E.HOSTS[x].sw : 'L3SW'; }
+  var POS = { MLS1: [390, 50], 'SW1': [170, 146], 'SW2': [560, 146], PC1: [90, 246], PC2: [250, 246], PC3: [418, 246], PC4: [560, 246], SRV: [702, 246] };
+  var LINKS = [['MLS1', 'SW1', 'trunk'], ['MLS1', 'SW2', 'trunk'], ['SW1', 'PC1'], ['SW1', 'PC2'], ['SW2', 'PC3'], ['SW2', 'PC4'], ['SW2', 'SRV']];
+  function norm(x) { return /^SVI/.test(x) ? 'MLS1' : x; }
+  function swOf(x) { return E.HOSTS[x] ? E.HOSTS[x].sw : 'MLS1'; }
   function chain(a, b) {
     var A = norm(a), B = norm(b), sa = swOf(a), sb = swOf(b), n = [A];
     if (A !== sa) n.push(sa);
-    if (sa !== sb) { if (sa !== 'L3SW') n.push('L3SW'); if (sb !== 'L3SW') n.push(sb); }
+    if (sa !== sb) { if (sa !== 'MLS1') n.push('MLS1'); if (sb !== 'MLS1') n.push(sb); }
     if (n[n.length - 1] !== B) n.push(B);
     return n.filter(function (v, i, arr) { return i === 0 || arr[i - 1] !== v; });
   }
@@ -94,7 +94,7 @@
     function addChain(c) { for (var i = 1; i < c.length; i++) keys[linkKey(c[i - 1], c[i])] = true; }
     if (ev.to === 'broadcast') {
       var others = ev.visibleAt.filter(function (x) { return x !== ev.from; });
-      if (!others.length) addChain(chain(ev.from, norm(ev.from) === 'L3SW' ? 'L3SW' : swOf(ev.from)));
+      if (!others.length) addChain(chain(ev.from, norm(ev.from) === 'MLS1' ? 'MLS1' : swOf(ev.from)));
       others.forEach(function (o) { addChain(chain(ev.from, o)); });
     } else if (ev.to) addChain(chain(ev.from, ev.to));
     return keys;
@@ -113,14 +113,14 @@
       linkEls[linkKey(l[0], l[1])] = el; root.appendChild(el);
     });
     function sub(id) {
-      if (id === 'L3SW') return 'Vlan10 .10.1 · Vlan20 .20.1';
-      if (id === 'SW-A' || id === 'SW-B') return 'L2 Switch';
+      if (id === 'MLS1') return 'Vlan10 .10.1 · Vlan20 .20.1';
+      if (id === 'SW1' || id === 'SW2') return 'L2 Switch';
       var hst = E.HOSTS[id], vlan = hst.vlan;
       if (id === 'PC1' && cfg) vlan = cfg.pc1AccessVlan;
       return hst.ip + ' · VLAN ' + vlan;
     }
     Object.keys(POS).forEach(function (id) {
-      var p = POS[id], w = id === 'L3SW' ? 176 : 132;
+      var p = POS[id], w = id === 'MLS1' ? 176 : 132;
       var g = s('g', { class: 'node' + (opts.cp === id ? ' cp' : ''), tabindex: '0', role: 'button', 'aria-label': devLabel(id) + ' 정보 보기' },
         s('rect', { x: p[0] - w / 2, y: p[1] - 22, width: w, height: 44, rx: 8 }),
         s('text', { x: p[0], y: p[1] - 4, 'text-anchor': 'middle', text: devLabel(id) + (opts.cp === id ? ' (캡처)' : '') }),
@@ -165,8 +165,8 @@
       if (!c && id === 'PC1') rows.push(['주의', 'network_spec 기준 값입니다. 실제 설정은 장비 상태 확인으로 봅니다.']);
       return rows;
     }
-    if (id === 'L3SW') return [['역할', 'L3 Switch — VLAN 간 라우팅 (Default Gateway)'], ['Vlan10 SVI', '192.168.10.1 / 00:d0:bc:00:00:0a'], ['Vlan20 SVI', '192.168.20.1 / 00:d0:bc:00:00:14'], ['포트', 'Gi1/0/1 → SW-A (Trunk), Gi1/0/2 → SW-B (Trunk)']];
-    return [['역할', 'L2 Switch — 같은 VLAN 안에서 MAC 주소로 프레임 전달'], ['Uplink', 'Gi0/1 → L3SW (Trunk)'], ['포트', id === 'SW-A' ? 'Fa0/1 PC1, Fa0/2 PC3' : 'Fa0/1 PC2, Fa0/2 PC4, Fa0/24 Server']];
+    if (id === 'MLS1') return [['역할', 'L3 Switch — VLAN 간 라우팅 (Default Gateway)'], ['Vlan10 SVI', '192.168.10.1 / 00:d0:bc:00:00:0a'], ['Vlan20 SVI', '192.168.20.1 / 00:d0:bc:00:00:14'], ['포트', 'Gi0/1 → SW1 (Trunk), Gi0/2 → SW2 (Trunk)']];
+    return [['역할', 'L2 Switch — 같은 VLAN 안에서 MAC 주소로 프레임 전달'], ['Uplink', 'Gi0/1 → MLS1 (Trunk)'], ['포트', id === 'SW1' ? 'Fa0/1 PC1, Fa0/2 PC2 (VLAN 10)' : 'Fa0/1 PC3, Fa0/2 PC4, Fa0/3 Server (VLAN 20)']];
   }
   function kv(rows) {
     var dl = h('dl', { class: 'kv' });
@@ -223,7 +223,7 @@
     });
 
     function fromTo(ev) {
-      var f = ev.from === 'SRV' ? 'Server' : /^SVI/.test(ev.from) ? 'L3SW' : ev.from;
+      var f = ev.from === 'SRV' ? 'Server' : /^SVI/.test(ev.from) ? 'MLS1' : ev.from;
       return [f + ' ' + (ev.srcIp || ''), ev.to === 'broadcast' ? 'Broadcast' : (ev.dstIp || '')];
     }
     function renderTable() {
@@ -424,13 +424,13 @@
       if (legs.length === 2) main.appendChild(h('div', { class: 'card' }, h('h3', { style: 'margin-top:0', text: '라우터 전후로 무엇이 바뀌고 무엇이 그대로인가 (첫 ping)' }),
         h('div', { class: 'table-wrap', tabindex: '0' }, h('table', { class: 'pkts' }, h('thead', null, h('tr', null, ['구간', '출발 MAC', '도착 MAC', '출발 IP', '도착 IP'].map(function (t) { return h('th', { text: t }); }))),
           h('tbody', null, legs.map(function (e, i) {
-            return h('tr', null, h('td', { text: i === 0 ? '① PC1 → L3SW (VLAN 10)' : '② L3SW → Server (VLAN 20)' }), h('td', { text: e.srcMac }), h('td', { text: e.dstMac }), h('td', { text: e.srcIp }), h('td', { text: e.dstIp }));
+            return h('tr', null, h('td', { text: i === 0 ? '① PC1 → MLS1 (VLAN 10)' : '② MLS1 → Server (VLAN 20)' }), h('td', { text: e.srcMac }), h('td', { text: e.dstMac }), h('td', { text: e.srcIp }), h('td', { text: e.dstIp }));
           })))),
         h('p', { class: 'small', text: 'MAC(링크 주소)은 구간마다 새로 붙습니다. IP(최종 목적지)는 끝까지 같습니다. 이 예제는 NAT를 쓰지 않습니다.' })));
     }
     if (id === 'c') {
       main.appendChild(h('div', { class: 'grid grid-3' },
-        [['DNS', '어디로 가야 하나?', '이름 web.packetlab.example → IP 192.168.20.20'], ['TCP', '상대가 받을 준비가 됐나?', 'SYN → SYN-ACK → ACK로 연결을 연다'], ['HTTP', '무엇을 달라고 할까?', 'GET / → 200 OK']].map(function (x) {
+        [['DNS', '어디로 가야 하나?', '이름 www.packetlab.test → IP 192.168.20.20'], ['TCP', '상대가 받을 준비가 됐나?', 'SYN → SYN-ACK → ACK로 연결을 연다'], ['HTTP', '무엇을 달라고 할까?', 'GET / → 200 OK']].map(function (x) {
           return h('div', { class: 'card' }, protoBadge(x[0]), h('p', null, h('b', { text: x[1] })), h('p', { class: 'small', text: x[2] }));
         })));
       main.appendChild(h('p', { class: 'small muted', text: '이 예제는 일반 DNS(UDP 53)와 일반 HTTP(TCP 80)입니다. 실제 HTTPS나 암호화 DNS에서는 요청 내용이 암호화되어 이렇게 보이지 않을 수 있습니다.' }));
@@ -678,9 +678,9 @@
   // ---------------------------------------------------------------- 화면: Blind Fault
   var BLIND_EXPLAIN = {
     'EDU-CASE-1': 'PC1의 Default Gateway가 192.168.10.254로 잘못 설정되어 있었다. 핵심 증거는 ARP가 찾는 IP였다. 다른 네트워크로 보낼 때 PC1은 192.168.10.1이 아니라 192.168.10.254를 찾았고, 그 주소를 쓰는 장비가 없어 답이 없었다. 같은 네트워크(PC2, 192.168.10.1)로는 통신이 됐다.',
-    'EDU-CASE-2': 'SW-A의 PC1 포트(Fa0/1)가 VLAN 20에 할당되어 있었다. PC1 NIC에서는 ARP만 반복되어 SVI down과 비슷해 보였다. 하지만 같은 VLAN 10의 PC2와도 통신이 안 됐고, VLAN 20의 PC3 NIC에서 PC1의 ARP가 보였다. 이것이 PC1의 브로드캐스트가 VLAN 20으로 퍼지고 있다는 근거였다.',
-    'EDU-CASE-3': 'L3SW와 SW-B 사이 Trunk에서 VLAN 20이 빠져 있었다. PC1은 Gateway의 MAC을 찾았고 ping도 내보냈지만 답이 오지 않았다. 다른 지점(PC3 NIC, VLAN 20)에서 L3SW가 서버를 찾는 ARP를 반복하는 것이 보였고, 서버 NIC에는 아무것도 도착하지 않았다.',
-    'EDU-CASE-4': 'L3SW의 Vlan10 SVI가 down이었다. PC1이 192.168.10.1을 찾는 ARP에 답이 없었다. 같은 VLAN 10의 PC2와는 통신이 됐으므로, PC1의 포트 VLAN보다는 Gateway 쪽 인터페이스를 의심할 근거가 됐다.',
+    'EDU-CASE-2': 'SW1의 PC1 포트(Fa0/1)가 VLAN 20에 할당되어 있었다. PC1 NIC에서는 ARP만 반복되어 SVI down과 비슷해 보였다. 하지만 같은 VLAN 10의 PC2와도 통신이 안 됐고, VLAN 20의 PC3 NIC에서 PC1의 ARP가 보였다. 이것이 PC1의 브로드캐스트가 VLAN 20으로 퍼지고 있다는 근거였다.',
+    'EDU-CASE-3': 'MLS1 Gi0/2와 SW2 사이 Trunk에서 VLAN 20이 빠져 있었다. PC1은 Gateway의 MAC을 찾았고 ping도 내보냈지만 답이 오지 않았다. Server NIC와 PC3 NIC에는 아무것도 도착하지 않았다. VLAN 20 장비 전체가 MLS1과 끊겼다는 근거다. PC2는 PC1과 같은 SW1에 있어 Trunk를 지나지 않으므로 통신이 됐다.',
+    'EDU-CASE-4': 'MLS1의 Vlan10 SVI가 down이었다. PC1이 192.168.10.1을 찾는 ARP에 답이 없었다. 같은 VLAN 10의 PC2와는 통신이 됐으므로, PC1의 포트 VLAN보다는 Gateway 쪽 인터페이스를 의심할 근거가 됐다.',
     'EDU-CASE-5': 'PC1의 DNS 서버 주소가 192.168.20.53으로 잘못 설정되어 있었다. 서버 IP로 ping은 됐다. DNS Query의 목적지 IP가 서버(192.168.20.20)가 아니라 192.168.20.53이었고, 응답이 없었다.',
     'EDU-CASE-6': 'Server의 웹 서비스(TCP 80)가 중지되어 있었다. DNS와 ping은 정상이었다. SYN에 대해 서버가 RST로 답했다. 즉 서버까지는 도달했지만 80번 포트에서 연결을 받는 프로그램이 없었다.',
     'EDU-CASE-7': 'PC1의 Subnet Mask가 /16으로 잘못 설정되어 있었다. PC1은 서버(192.168.20.20)를 같은 네트워크로 착각해 Gateway 대신 서버 IP를 직접 ARP로 찾았다. Gateway ping은 됐다.'

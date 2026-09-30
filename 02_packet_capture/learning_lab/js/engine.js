@@ -14,7 +14,7 @@
     '테스트는 항상 PC1에서 시작한다.',
     'NAT, 방화벽 ACL, STP 차단, 링크 Down은 다루지 않는다.',
     'PC는 ping 1회 시도마다 next hop의 MAC을 모르면 ARP Request를 최대 2번 보낸다(실제 OS마다 횟수가 다르다).',
-    '라우터(L3SW)는 목적지 네트워크로 가는 경로가 없으면 ICMP Destination Unreachable을 돌려준다고 가정한다(실제 장비는 설정·속도 제한에 따라 보내지 않을 수 있다).',
+    '라우터(MLS1)는 목적지 네트워크로 가는 경로가 없으면 ICMP Destination Unreachable을 돌려준다고 가정한다(실제 장비는 설정·속도 제한에 따라 보내지 않을 수 있다).',
     '라우터가 다음 장비의 MAC을 ARP로 찾지 못하면 그 패킷은 조용히 버려진다.',
     'nslookup은 응답이 없으면 같은 질의를 2번 더 보낸다(총 3번). TCP SYN은 응답이 없으면 2번 재전송한다(총 3번).',
     'HTTP는 암호화되지 않은 일반 HTTP(포트 80), DNS는 일반 UDP 53이다. HTTPS·암호화 DNS에서는 같은 내용이 보이지 않는다.',
@@ -24,31 +24,32 @@
   ];
 
   // ---------- 교육용 토폴로지 ----------
-  var DOMAIN = 'web.packetlab.example';
+  var DOMAIN = 'www.packetlab.test';
   var WRONG_WEB_IP = '192.168.20.200';
 
   var HOSTS = {
-    PC1: { id: 'PC1', label: 'PC1 (개발팀)', ip: '192.168.10.10', mac: '00:10:0a:00:00:10', sw: 'SW-A', port: 'Fa0/1', vlan: 10, mask: 24, gw: '192.168.10.1', dns: '192.168.20.20' },
-    PC2: { id: 'PC2', label: 'PC2 (개발팀)', ip: '192.168.10.11', mac: '00:10:0a:00:00:11', sw: 'SW-B', port: 'Fa0/1', vlan: 10, mask: 24, gw: '192.168.10.1', dns: '192.168.20.20' },
-    PC3: { id: 'PC3', label: 'PC3 (운영팀)', ip: '192.168.20.10', mac: '00:10:14:00:00:10', sw: 'SW-A', port: 'Fa0/2', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' },
-    PC4: { id: 'PC4', label: 'PC4 (운영팀)', ip: '192.168.20.11', mac: '00:10:14:00:00:11', sw: 'SW-B', port: 'Fa0/2', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' },
-    SRV: { id: 'SRV', label: 'Server (DNS·Web)', ip: '192.168.20.20', mac: '00:10:14:00:01:00', sw: 'SW-B', port: 'Fa0/24', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' }
+    PC1: { id: 'PC1', label: 'PC1 (개발팀)', ip: '192.168.10.10', mac: '00:10:0a:00:00:10', sw: 'SW1', port: 'Fa0/1', vlan: 10, mask: 24, gw: '192.168.10.1', dns: '192.168.20.20' },
+    PC2: { id: 'PC2', label: 'PC2 (개발팀)', ip: '192.168.10.11', mac: '00:10:0a:00:00:11', sw: 'SW1', port: 'Fa0/2', vlan: 10, mask: 24, gw: '192.168.10.1', dns: '192.168.20.20' },
+    PC3: { id: 'PC3', label: 'PC3 (운영팀)', ip: '192.168.20.10', mac: '00:10:14:00:00:10', sw: 'SW2', port: 'Fa0/1', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' },
+    PC4: { id: 'PC4', label: 'PC4 (운영팀)', ip: '192.168.20.11', mac: '00:10:14:00:00:11', sw: 'SW2', port: 'Fa0/2', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' },
+    SRV: { id: 'SRV', label: 'Server (DNS·Web)', ip: '192.168.20.20', mac: '00:10:14:00:01:00', sw: 'SW2', port: 'Fa0/3', vlan: 20, mask: 24, gw: '192.168.20.1', dns: '192.168.20.20' }
   };
   var SVIS = {
-    SVI10: { id: 'SVI10', label: 'L3SW Vlan10', ip: '192.168.10.1', mac: '00:d0:bc:00:00:0a', vlan: 10, mask: 24, sw: 'L3SW' },
-    SVI20: { id: 'SVI20', label: 'L3SW Vlan20', ip: '192.168.20.1', mac: '00:d0:bc:00:00:14', vlan: 20, mask: 24, sw: 'L3SW' }
+    SVI10: { id: 'SVI10', label: 'MLS1 Vlan10', ip: '192.168.10.1', mac: '00:d0:bc:00:00:0a', vlan: 10, mask: 24, sw: 'MLS1' },
+    SVI20: { id: 'SVI20', label: 'MLS1 Vlan20', ip: '192.168.20.1', mac: '00:d0:bc:00:00:14', vlan: 20, mask: 24, sw: 'MLS1' }
   };
   var CAPTURE_POINTS = {
-    PC1: 'PC1 NIC (SW-A Fa0/1)',
-    PC2: 'PC2 NIC (SW-B Fa0/1)',
-    PC3: 'PC3 NIC (SW-A Fa0/2)',
-    SRV: 'Server NIC (SW-B Fa0/24)'
+    PC1: 'PC1 NIC (SW1 Fa0/1)',
+    PC2: 'PC2 NIC (SW1 Fa0/2)',
+    PC3: 'PC3 NIC (SW2 Fa0/1)',
+    SRV: 'Server NIC (SW2 Fa0/3)'
   };
 
   var DEFAULT_CONFIG = {
     pc1Gateway: '192.168.10.1',
     pc1Mask: 24,
     pc1AccessVlan: 10,
+    trunkAAllowed: [10, 20],
     trunkBAllowed: [10, 20],
     sviDown: null,
     pc1Dns: '192.168.20.20',
@@ -60,9 +61,10 @@
   var CONFIG_OPTIONS = {
     pc1Gateway: { label: 'PC1 Default Gateway', options: [['192.168.10.1', '192.168.10.1 (명세와 같음)'], ['192.168.10.254', '192.168.10.254 (존재하지 않는 주소)']] },
     pc1Mask: { label: 'PC1 Subnet Mask', options: [[24, '/24 = 255.255.255.0'], [16, '/16 = 255.255.0.0']] },
-    pc1AccessVlan: { label: 'SW-A Fa0/1 Access VLAN (PC1 포트)', options: [[10, 'VLAN 10'], [20, 'VLAN 20']] },
-    trunkBAllowed: { label: 'L3SW ↔ SW-B Trunk 허용 VLAN', options: [['10,20', '10, 20'], ['20', '20만 (10 누락)'], ['10', '10만 (20 누락)']] },
-    sviDown: { label: 'L3SW SVI 상태', options: [['', 'Vlan10·Vlan20 모두 up'], ['10', 'Vlan10 down'], ['20', 'Vlan20 down']] },
+    pc1AccessVlan: { label: 'SW1 Fa0/1 Access VLAN (PC1 포트)', options: [[10, 'VLAN 10'], [20, 'VLAN 20']] },
+    trunkAAllowed: { label: 'MLS1 Gi0/1 ↔ SW1 Trunk 허용 VLAN', options: [['10,20', '10, 20'], ['20', '20만 (10 누락)']] },
+    trunkBAllowed: { label: 'MLS1 Gi0/2 ↔ SW2 Trunk 허용 VLAN', options: [['10,20', '10, 20'], ['10', '10만 (20 누락)']] },
+    sviDown: { label: 'MLS1 SVI 상태', options: [['', 'Vlan10·Vlan20 모두 up'], ['10', 'Vlan10 down'], ['20', 'Vlan20 down']] },
     pc1Dns: { label: 'PC1 DNS 서버 주소', options: [['192.168.20.20', '192.168.20.20 (서버)'], ['192.168.20.53', '192.168.20.53 (존재하지 않는 주소)']] },
     dnsService: { label: 'Server DNS 응답 상태', options: [['ok', '정상 응답'], ['no_response', '응답하지 않음'], ['nxdomain', '오류 응답 (NXDOMAIN)'], ['wrong_answer', '잘못된 IP로 응답']] },
     webPort: { label: 'Server Web(TCP 80) 상태', options: [['open', '열림 (서비스 동작)'], ['closed', '닫힘 (서비스 중지 → RST)'], ['filtered', '응답 없음 (패킷 폐기)']] }
@@ -79,9 +81,9 @@
 
   var STATUS_CHECKS = {
     pc1_ipconfig: { id: 'pc1_ipconfig', label: 'PC1 ipconfig /all', device: 'PC1' },
-    swa_vlan: { id: 'swa_vlan', label: 'SW-A show vlan brief', device: 'SW-A' },
-    swb_trunk: { id: 'swb_trunk', label: 'SW-B show interfaces trunk', device: 'SW-B' },
-    l3_ipint: { id: 'l3_ipint', label: 'L3SW show ip interface brief', device: 'L3SW' },
+    sw1_vlan: { id: 'sw1_vlan', label: 'SW1 show vlan brief', device: 'SW1' },
+    mls_trunk: { id: 'mls_trunk', label: 'MLS1 show interfaces trunk', device: 'MLS1' },
+    l3_ipint: { id: 'l3_ipint', label: 'MLS1 show ip interface brief', device: 'MLS1' },
     srv_service: { id: 'srv_service', label: 'Server 서비스 상태', device: 'SRV' }
   };
 
@@ -99,7 +101,7 @@
     var k;
     for (k in DEFAULT_CONFIG) cfg[k] = DEFAULT_CONFIG[k];
     for (k in (c || {})) if (Object.prototype.hasOwnProperty.call(DEFAULT_CONFIG, k)) cfg[k] = c[k];
-    if (typeof cfg.trunkBAllowed === 'string') cfg.trunkBAllowed = cfg.trunkBAllowed.split(',').filter(Boolean).map(Number);
+    ['trunkAAllowed', 'trunkBAllowed'].forEach(function (t) { if (typeof cfg[t] === 'string') cfg[t] = cfg[t].split(',').filter(Boolean).map(Number); });
     if (cfg.sviDown === '' || cfg.sviDown === undefined) cfg.sviDown = null;
     if (cfg.sviDown !== null) cfg.sviDown = Number(cfg.sviDown);
     cfg.pc1Mask = Number(cfg.pc1Mask);
@@ -108,7 +110,7 @@
   }
   function configKey(cfg, k) {
     var v = cfg[k];
-    if (k === 'trunkBAllowed') return v.slice().sort().join(',');
+    if (k === 'trunkAAllowed' || k === 'trunkBAllowed') return v.slice().sort().join(',');
     if (k === 'sviDown') return v === null ? '' : String(v);
     return String(v);
   }
@@ -141,8 +143,8 @@
   Net.prototype.device = function (id) { return this.hosts[id] || SVIS[id]; };
   Net.prototype.vlanOf = function (id) { return this.device(id).vlan; };
   Net.prototype.uplinkAllows = function (sw, v) {
-    if (sw === 'L3SW') return true;
-    if (sw === 'SW-A') return v === 10 || v === 20;
+    if (sw === 'MLS1') return true;
+    if (sw === 'SW1') return this.cfg.trunkAAllowed.indexOf(v) >= 0;
     return this.cfg.trunkBAllowed.indexOf(v) >= 0;
   };
   Net.prototype.l2Reach = function (a, b) {
@@ -181,11 +183,11 @@
   Net.prototype.pathNodes = function (a, b) {
     var sa = this.device(a).sw, sb = b ? this.device(b).sw : null;
     var nodes = [a];
-    if (sa !== 'L3SW') nodes.push(sa);
+    if (sa !== 'MLS1') nodes.push(sa);
     if (!b) return nodes;
-    if (sa !== sb) { if (sa !== 'L3SW') nodes.push('L3SW'); if (sb !== 'L3SW') nodes.push(sb); }
+    if (sa !== sb) { if (sa !== 'MLS1') nodes.push('MLS1'); if (sb !== 'MLS1') nodes.push(sb); }
     nodes.push(b);
-    return nodes.map(function (n) { return /^SVI/.test(n) ? 'L3SW' : n; }).filter(function (n, i, arr) { return i === 0 || arr[i - 1] !== n; });
+    return nodes.map(function (n) { return /^SVI/.test(n) ? 'MLS1' : n; }).filter(function (n, i, arr) { return i === 0 || arr[i - 1] !== n; });
   };
   Net.prototype.tick = function (dt) { this.t = Math.round((this.t + (dt || 0.001)) * 1000) / 1000; return this.t; };
   Net.prototype.emit = function (ev) {
@@ -274,7 +276,7 @@
     if (this.sviUp(10) && sameSubnet(dstIp, SVIS.SVI10.ip, 24)) egress = 'SVI10';
     if (this.sviUp(20) && sameSubnet(dstIp, SVIS.SVI20.ip, 24)) egress = 'SVI20';
     if (!egress) {
-      this.note('L3SW에 ' + dstIp + ' 네트워크로 가는 경로가 없다(해당 SVI가 down이면 연결된 경로도 사라진다) → ICMP Destination Unreachable을 돌려준다 (모델 가정).');
+      this.note('MLS1에 ' + dstIp + ' 네트워크로 가는 경로가 없다(해당 SVI가 down이면 연결된 경로도 사라진다) → ICMP Destination Unreachable을 돌려준다 (모델 가정).');
       var src = this.hosts[srcHost];
       this.emitIp(ingress, srcHost, inSvi.ip, src.ip, inSvi.mac, src.mac, {
         proto: 'ICMP', kind: 'icmp_unreach', info: 'Destination unreachable (Network unreachable)',
@@ -283,9 +285,9 @@
       return { status: 'unreachable', at: ingress };
     }
     var eg = SVIS[egress];
-    this.note('L3SW: ' + dstIp + '는 ' + eg.label + '(' + networkOf(eg.ip, 24) + ') 쪽 → 출구 인터페이스를 바꾸고 새 Ethernet 헤더를 붙인다 (IP 주소는 그대로, NAT 없음).');
+    this.note('MLS1: ' + dstIp + '는 ' + eg.label + '(' + networkOf(eg.ip, 24) + ') 쪽 → 출구 인터페이스를 바꾸고 새 Ethernet 헤더를 붙인다 (IP 주소는 그대로, NAT 없음).');
     var mac = this.resolve(egress, dstIp, 1);
-    if (!mac) { this.note('L3SW가 ' + dstIp + '의 MAC을 찾지 못해 패킷을 버린다.'); return { status: 'dropped', at: 'L3SW' }; }
+    if (!mac) { this.note('MLS1가 ' + dstIp + '의 MAC을 찾지 못해 패킷을 버린다.'); return { status: 'dropped', at: 'MLS1' }; }
     var dst = this.ownerOf(dstIp);
     var p2 = {}; for (var k in pkt) p2[k] = pkt[k];
     p2.dt = 0.001; p2.extra = { routedLeg: true };
@@ -428,18 +430,20 @@
         '   Subnet Mask . . . . . . . . . . . : ' + (cfg.pc1Mask === 24 ? '255.255.255.0' : '255.255.0.0'),
         '   Default Gateway . . . . . . . . . : ' + cfg.pc1Gateway,
         '   DNS Servers . . . . . . . . . . . : ' + cfg.pc1Dns];
-      case 'swa_vlan': return [
+      case 'sw1_vlan': return [
         'VLAN Name                             Status    Ports',
         '---- -------------------------------- --------- -------------------------------',
         '1    default                          active    Fa0/3-24, Gi0/2',
-        '10   DEV                              active    ' + (cfg.pc1AccessVlan === 10 ? 'Fa0/1' : ''),
-        '20   OPS                              active    ' + (cfg.pc1AccessVlan === 20 ? 'Fa0/1, Fa0/2' : 'Fa0/2')];
-      case 'swb_trunk': return [
+        '10   DEV_TEAM                         active    ' + (cfg.pc1AccessVlan === 10 ? 'Fa0/1, Fa0/2' : 'Fa0/2'),
+        '20   OPS_TEAM                         active    ' + (cfg.pc1AccessVlan === 20 ? 'Fa0/1' : '')];
+      case 'mls_trunk': return [
         'Port        Mode         Encapsulation  Status        Native vlan',
         'Gi0/1       on           802.1q         trunking      1',
+        'Gi0/2       on           802.1q         trunking      1',
         '',
         'Port        Vlans allowed on trunk',
-        'Gi0/1       ' + cfg.trunkBAllowed.slice().sort().join(',')];
+        'Gi0/1       ' + cfg.trunkAAllowed.slice().sort().join(','),
+        'Gi0/2       ' + cfg.trunkBAllowed.slice().sort().join(',')];
       case 'l3_ipint': return [
         'Interface              IP-Address      OK? Method Status                Protocol',
         'Vlan10                 192.168.10.1    YES manual ' + up(10),
@@ -456,7 +460,7 @@
     gateway: { label: 'PC Default Gateway 설정 오류', variants: [{ pc1Gateway: '192.168.10.254' }] },
     mask: { label: 'PC Subnet Mask 오류', variants: [{ pc1Mask: 16 }] },
     access_vlan: { label: 'Access Port VLAN 할당 오류', variants: [{ pc1AccessVlan: 20 }] },
-    trunk: { label: 'Trunk 허용 VLAN 누락', variants: [{ trunkBAllowed: [20] }, { trunkBAllowed: [10] }] },
+    trunk: { label: 'Trunk 허용 VLAN 누락', variants: [{ trunkAAllowed: [20] }, { trunkBAllowed: [10] }] },
     svi: { label: 'SVI Down (Inter-VLAN Gateway 인터페이스)', variants: [{ sviDown: 10 }, { sviDown: 20 }] },
     dns: { label: 'DNS 설정·서버 문제', variants: [{ pc1Dns: '192.168.20.53' }, { dnsService: 'no_response' }, { dnsService: 'nxdomain' }, { dnsService: 'wrong_answer' }] },
     web: { label: 'Server Web 서비스·포트 문제', variants: [{ webPort: 'closed' }, { webPort: 'filtered' }] }
@@ -492,7 +496,7 @@
     { id: 'EDU-CASE-2', title: '사건 2', symptom: 'PC1 사용자: "오늘 아침부터 인터넷도, 사내 서버도 전부 안 돼요."', config: { pc1AccessVlan: 20 } },
     { id: 'EDU-CASE-3', title: '사건 3', symptom: 'PC1 사용자: "서버 웹페이지가 안 열려요. 같은 팀 PC2와는 통신이 돼요."', config: { trunkBAllowed: [10] } },
     { id: 'EDU-CASE-4', title: '사건 4', symptom: 'PC1 사용자: "같은 팀 PC2는 되는데, 서버랑 운영팀 PC가 다 안 돼요."', config: { sviDown: 10 } },
-    { id: 'EDU-CASE-5', title: '사건 5', symptom: 'PC1 사용자: "주소창에 web.packetlab.example을 치면 안 열려요."', config: { pc1Dns: '192.168.20.53' } },
+    { id: 'EDU-CASE-5', title: '사건 5', symptom: 'PC1 사용자: "주소창에 www.packetlab.test을 치면 안 열려요."', config: { pc1Dns: '192.168.20.53' } },
     { id: 'EDU-CASE-6', title: '사건 6', symptom: 'PC1 사용자: "서버 웹페이지가 안 열려요. 서버 IP로 ping은 된대요."', config: { webPort: 'closed' } },
     { id: 'EDU-CASE-7', title: '사건 7', symptom: 'PC1 사용자: "서버 웹페이지가 안 열려요. Gateway로 ping은 돼요."', config: { pc1Mask: 16 } }
   ];

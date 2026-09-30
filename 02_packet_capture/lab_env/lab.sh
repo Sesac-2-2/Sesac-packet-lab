@@ -18,7 +18,8 @@ TOPOLOGY="${TOPOLOGY:-$HERE/topology.conf}"
 source "$TOPOLOGY"
 
 HOSTS=(pc1 pc2 pc3 pc4 srv)
-SWITCHES=(swa swb l3)
+SWITCHES=(sw1 sw2 mls1)
+L2_SWITCHES=(sw1 sw2)
 ALL_NS=("${HOSTS[@]}" "${SWITCHES[@]}")
 RUN_DIR="/run/packetlab"
 OUT_DIR="${OUT_DIR:-$(cd "$HERE/.." && pwd)}"   # 기본값: 02_packet_capture/ (sudo -E가 막힌 환경에서도 동작)
@@ -31,14 +32,15 @@ declare -A CAP
 for _h in "${HOSTS[@]}"; do
   CAP[$_h]="$_h eth0 ${_h} NIC (${HOST_SW[$_h]} ${HOST_PORT[$_h]}, Access VLAN ${HOST_VLAN[$_h]})"
 done
-CAP[trunk-a]="l3 ga L3SW↔swa Trunk (802.1Q 태그 보임)"
-CAP[trunk-b]="l3 gb L3SW↔swb Trunk (802.1Q 태그 보임)"
+for _s in "${L2_SWITCHES[@]}"; do
+  CAP[trunk-$_s]="mls1 ${MLS_PORT[$_s]} MLS1 ${MLS_PORT[$_s]} ↔ ${_s^^} ${SW_UPLINK[$_s]} Trunk (802.1Q 태그 보임)"
+done
 
 say()  { printf '%s\n' "$*"; }
 die()  { printf '[중단] %s\n' "$*" >&2; exit 1; }
 need_root() { [[ $EUID -eq 0 ]] || die "root 권한이 필요합니다. sudo ./lab.sh $* 로 실행하세요."; }
 nsx() { local ns=$1; shift; ip netns exec "$ns" "$@"; }
-is_up() { ip netns list 2>/dev/null | grep -qw l3; }
+is_up() { ip netns list 2>/dev/null | grep -qw mls1; }
 is_ready() { [[ -f $RUN_DIR/ready ]]; }   # up이 끝까지 성공했을 때만 생기는 파일
 
 # ------------------------------------------------------------------ check
@@ -119,18 +121,23 @@ cmd_up() {
     mklink "$h" eth0 "${HOST_SW[$h]}" "${HOST_PORT[$h]}"
     access_port "${HOST_SW[$h]}" "${HOST_PORT[$h]}" "${HOST_VLAN[$h]}"
   done
-  # 스위치 ↔ L3SW (Trunk)
-  mklink swa uplink l3 ga; mklink swb uplink l3 gb
-  trunk_port swa uplink "${VLANS[@]}"; trunk_port swb uplink "${VLANS[@]}"
-  trunk_port l3 ga "${VLANS[@]}";      trunk_port l3 gb "${VLANS[@]}"
+  # 스위치 ↔ MLS1 (Trunk)
+  local sw
+  for sw in "${L2_SWITCHES[@]}"; do
+    mklink "$sw" "${SW_UPLINK[$sw]}" mls1 "${MLS_PORT[$sw]}"
+    # shellcheck disable=SC2086
+    trunk_port "$sw" "${SW_UPLINK[$sw]}" ${TRUNK_VLANS[$sw]}
+    # shellcheck disable=SC2086
+    trunk_port mls1 "${MLS_PORT[$sw]}" ${TRUNK_VLANS[$sw]}
+  done
   # L3 스위치: 브리지 자신에 VLAN을 허용하고 VLAN 인터페이스(SVI)를 만든다
   for v in "${VLANS[@]}"; do
-    nsx l3 bridge vlan add dev br0 vid "$v" self
-    ip -n l3 link add link br0 name "vlan$v" type vlan id "$v"
-    ip -n l3 addr add "${SVI_IP[$v]}" dev "vlan$v"
-    ip -n l3 link set dev "vlan$v" up
+    nsx mls1 bridge vlan add dev br0 vid "$v" self
+    ip -n mls1 link add link br0 name "vlan$v" type vlan id "$v"
+    ip -n mls1 addr add "${SVI_IP[$v]}" dev "vlan$v"
+    ip -n mls1 link set dev "vlan$v" up
   done
-  nsx l3 sysctl -qw net.ipv4.ip_forward=1
+  nsx mls1 sysctl -qw net.ipv4.ip_forward=1
   # 호스트 주소·Gateway·DNS
   for h in "${HOSTS[@]}"; do
     ip -n "$h" addr add "${HOST_IP[$h]}" dev eth0
@@ -185,8 +192,8 @@ cmd_test() {
 }
 cmd_flush() {
   need_root flush
-  local ns; for ns in "${HOSTS[@]}" l3; do ip -n "$ns" neigh flush all 2>/dev/null || true; done
-  say "모든 호스트와 L3SW의 ARP 캐시를 비웠습니다. (이 실습망의 PC에는 DNS 캐시가 없습니다)"
+  local ns; for ns in "${HOSTS[@]}" mls1; do ip -n "$ns" neigh flush all 2>/dev/null || true; done
+  say "모든 호스트와 MLS1의 ARP 캐시를 비웠습니다. (이 실습망의 PC에는 DNS 캐시가 없습니다)"
 }
 
 # ------------------------------------------------------------------ capture
@@ -261,14 +268,15 @@ cmd_status() {
   say "== 토폴로지 값 출처: $SPEC_SOURCE"
   say "== [ipconfig 대응] PC1 주소·라우팅·DNS"
   ip -n pc1 -br addr show dev eth0; ip -n pc1 route; cat /etc/netns/pc1/resolv.conf
-  say "== [show vlan brief 대응] swa 포트별 VLAN (PVID = Access VLAN)"
-  nsx swa bridge vlan show
-  say "== [show vlan brief 대응] swb 포트별 VLAN"
-  nsx swb bridge vlan show
-  say "== [show interfaces trunk 대응] L3SW 포트별 허용 VLAN (ga=swa, gb=swb)"
-  nsx l3 bridge vlan show
-  say "== [show ip interface brief 대응] L3SW SVI"
-  ip -n l3 -br addr show type vlan
+  local sw
+  for sw in "${L2_SWITCHES[@]}"; do
+    say "== [show vlan brief 대응] ${sw^^} 포트별 VLAN (PVID = Access VLAN)"
+    nsx "$sw" bridge vlan show
+  done
+  say "== [show interfaces trunk 대응] MLS1 포트별 허용 VLAN (gi0_1=SW1, gi0_2=SW2)"
+  nsx mls1 bridge vlan show
+  say "== [show ip interface brief 대응] MLS1 SVI"
+  ip -n mls1 -br addr show type vlan
   say "== Server 서비스 (LISTEN 중인 포트)"
   nsx srv ss -ltnu 2>/dev/null || true
   local f; for f in "$RUN_DIR"/cap_*.pid; do [[ -e $f ]] && say "캡처 중: ${f##*/}"; done

@@ -42,7 +42,7 @@
 | `schema_version` | string | 현재 `"0.1-draft"`. 없으면 "과제 HTML 기본 형식"으로 간주. |
 | `capture_file` | string 또는 null | 근거 캡처 파일명(예: `fault_FAULT-03.pcapng`). Packet Tracer 관찰이면 `.pkt` 또는 null. |
 | `evidence_source` | `"wireshark_capture"` \| `"packet_tracer_simulation"` \| `"example"` | 증거의 출처. `example`은 교육용 예제. |
-| `capture_point` | string | 어디서 캡처했는지(예: `PC1 NIC (SW-A Fa0/1 access port)`). |
+| `capture_point` | string | 어디서 캡처했는지(예: `PC1 NIC (SW1 Fa0/1 access port)`). |
 | `test_description` | string | 실행한 테스트(예: `ping -n 4 <SERVER_IP>`, 시작 시각 포함). |
 | `analysis_scope` | object | 아래 4절. 무엇을·언제·어떤 기준으로 셌는지. |
 | `dns_response_count` | int ≥ 0 또는 null | DNS Response(`dns.flags.response == 1`) 중 source_ip가 **받은** 패킷 수. 오류 응답(NXDOMAIN 등)도 포함 → 오류 여부는 `evidence`에 기록. |

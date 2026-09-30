@@ -13,7 +13,7 @@ window.PacketExample = {
   "schema_version": "0.1-draft",
   "capture_file": null,
   "evidence_source": "example",
-  "capture_point": "PC1 NIC (SW-A Fa0/1) — 교육용 모델",
+  "capture_point": "PC1 NIC (SW1 Fa0/1) — 교육용 모델",
   "test_description": "[교육용] ping -n 4 192.168.20.20 (교육용 예제 주소, 설계 Gateway 192.168.10.1)",
   "analysis_scope": {
     "time_window": {

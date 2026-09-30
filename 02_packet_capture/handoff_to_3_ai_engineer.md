@@ -100,15 +100,18 @@
 - 판단 순서: 근거 → 가설 → 추가 확인 → 결론. 과제에는 "Observe → Evidence Summary → Hypothesis 1/2/3 → 추가 확인 명령 제안 → Evidence 재확인 → Root Cause → Recovery Action" 흐름이 예시로 있습니다.
 - "PCAP 전체를 무작정 LLM에 던지지 않고, 핵심 특징을 구조화해 넘긴다" → 그 구조화된 입력이 `packet_summary.json`입니다.
 
-## 7. 아직 정해지지 않은 것 (정직하게)
+## 7. 현재 상태 (2026-09-29 갱신)
 
 | 항목 | 상태 |
 |---|---|
-| 실제 `packet_summary.json` | ⏳ 없음. 실제 캡처 후 생성. 지금 저장소에는 **교육용 예제**(`packet_summary.example.json`)만 있음 |
-| 실제 주소·서버·도메인 | ⏳ 1번의 `network_spec.md` 대기. 위 예시의 주소는 과제 HTML 기준 값이므로, **3번 코드에 주소를 고정하지 않는 것을 권합니다** |
-| 캡처 환경 | Packet Tracer 9.0.1에는 pcap 저장 기능이 없어, 같은 구조를 Linux에 재현해 캡처할 예정. 그래서 `limitations`에 "별도 재현 환경" 표시가 들어갈 수 있음 |
-| 여러 사례를 담는 방법 | ⏳ 합의 필요. 후보 (A) 사례별 파일 `packet_summary_<case_id>.json` (B) 묶음 파일 `{"schema_version": ..., "cases": [...]}`. 합의 전까지는 **단일 객체**를 유지 |
-| 추가 필드 채택 여부 | ⏳ 합의 필요 |
+| 주소·서버·도메인 | ✅ 1번 명세 반영: Server(DNS/Web) `192.168.20.20`, 도메인 `www.packetlab.test`, HTTP TCP/80. 3번 코드에 주소를 고정하지 않는 방식은 그대로 권장 |
+| 스위치 배치 | ✅ 1번 명세 반영: SW1(PC1, PC2 = VLAN 10), SW2(PC3, PC4, Server = VLAN 20), MLS1이 Inter-VLAN 라우팅. **PC1↔PC2는 Trunk와 MLS1을 지나지 않습니다.** 그래서 Trunk 장애가 나도 같은 VLAN PC 간 ping은 성공할 수 있습니다 |
+| 캡처 환경 | ✅ Packet Tracer 9.0.1에는 pcap 저장 기능이 없어, 같은 구조를 Linux(WSL2)에 재현해 캡처합니다. `limitations`에 "별도 Linux 재현 환경" 표시가 들어갑니다 |
+| 정상 Baseline | ✅ `normal.pcapng`(PC1 NIC), `normal_srv.pcapng`(Server NIC). 2026-09-29에 1번 명세 배치로 다시 캡처했습니다. **집계 값은 2026-09-28 캡처와 같습니다** (ARP 1/1, ICMP 4/4, DNS 3/3, SYN 1, SYN-ACK 1, RST 0) |
+| 여러 사례 | ✅ 사례별 `packet_summary_<case_id>.json` + 과제 HTML 이름 `packet_summary.json`(대표 사례 1건의 사본). 대표 사례는 ⏳ 팀이 정함 |
+| 추가 필드 | ✅ 전부 사용 |
+| 실제 장애 `packet_summary_<case_id>.json` | ⏳ 4번의 익명 `case_id`와 장애 적용 후 생성 |
+| Trunk 허용 VLAN | ⏳ 1번 명세에 없음. 캡처 환경은 두 Trunk 모두 VLAN 10, 20 허용으로 가정 |
 
 ## 8. 3번에게 요청 — 답을 주시면 2번이 맞춥니다
 
@@ -125,7 +128,9 @@
 | `02_packet_capture/data_contract.md` | 필드 정의·검증 규칙 전체 (이 문서의 원본) |
 | `02_packet_capture/packet_summary.example.json` | 교육용 예제 (`evidence_source: "example"`) |
 | `02_packet_capture/summarize_pcap.py validate <파일>` | JSON이 계약을 지키는지 검사하는 명령. 3번 쪽에서도 입력 검사에 쓸 수 있음 |
-| `02_packet_capture/packet_summary.json` | ⏳ 실제 분석 후 생성 |
+| `02_packet_capture/packet_summary_<case_id>.json`, `packet_summary.json` | ⏳ 실제 장애 분석 후 생성 |
+| `02_packet_capture/normal.pcapng`, `normal_srv.pcapng` | ✅ 정상 Baseline 실제 캡처 (1번 명세 배치) |
+| `02_packet_capture/packet_analysis.md` | ✅ Baseline 분석 기록 (프레임 번호, 도구↔Wireshark 집계 일치 확인) |
 
 ## 10. 3번 답변 반영 (2026-09-28)
 
@@ -133,7 +138,7 @@
 |---|---|
 | 추가 필드 | 전부 사용 ✅ |
 | null | "모름"으로 유지, 0으로 치환하지 않음 ✅ |
-| 여러 사례 | ✅ 둘 다 사용: 사례별 `packet_summary_<case_id>.json` + 과제 HTML 이름 `packet_summary.json`(대표 사례 1건의 사본, 대표 사례는 팀이 정함). 둘 다 단일 객체 |
+| 여러 사례 (합의) | ✅ 둘 다 사용: 사례별 `packet_summary_<case_id>.json` + 과제 HTML 이름 `packet_summary.json`(대표 사례 1건의 사본, 대표 사례는 팀이 정함). 둘 다 단일 객체 |
 | 기존 `ai_packet_assistant` | 패킷 1개 단위 설명용이라 이 계약과 충돌 없음 ✅ |
 | 추가 예제 4종 | `02_packet_capture/examples/`에 추가 ✅ (정상, DNS 무응답, TCP RST, null 섞인 제한적 캡처) |
 | EDU-EX-01의 `.254` | 설계 Gateway가 아니라 "Gateway 오설정 장애"에서 PC가 찾은 **관찰값**. 설계 Gateway는 `.1` (자세한 설명: `examples/README.md`) |
@@ -144,3 +149,9 @@
   → 그래서 `dns_response_count`에는 이 오류 응답이 포함됩니다. "오류 응답이 있다 = 장애"로 판단하지 말아 주세요. 오류 여부는 `evidence`의 rcode와 질의 유형(A/AAAA)을 함께 봐야 합니다.
 - 캐시 때문에 ARP가 안 보이는 경우가 정상 상태에서도 있습니다. 예를 들어 Gateway MAC을 이미 알면, 다른 VLAN으로 ping해도 ARP가 없습니다.
 - 정상 Baseline의 집계 값(목적지 = 서버 192.168.20.20 기준): ARP 1/1, ICMP 4/4, DNS 3/3(그중 1건 rcode 5), TCP SYN 1, SYN-ACK 1, RST 0.
+
+## 12. 3번 코드와의 호환성 확인 (2026-09-29, 2번이 읽기만 함)
+
+- `jae` 브랜치의 `03_packet_ai/analyzer.py`를 확인했습니다. 주소·도메인이 코드에 고정되어 있지 않아 1번 명세 반영(서버 IP·도메인·스위치 배치)의 영향이 없습니다.
+- `03_packet_ai/tests/fixtures/packet_summary_baseline.json`은 2026-09-28 캡처 기준입니다. 2026-09-29 재캡처와 9개 집계 값이 같아 진단 결과는 달라지지 않습니다. 다만 파일에 적힌 캡처 시각·배치는 옛 기준입니다. 갱신할지는 3번이 판단해 주세요.
+- 2번은 3번의 코드와 파일을 수정하지 않았습니다.
