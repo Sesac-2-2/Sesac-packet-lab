@@ -6,6 +6,8 @@
   <title>Packet.AI 프로젝트 안내</title>
   <link rel="stylesheet" href="02_packet_capture/learning_lab/styles.css">
   <style>
+    html { scroll-behavior: smooth; }
+    section[id] { scroll-margin-top: 150px; }
     .project-hero { margin-bottom: 16px; }
     .project-hero h1 { margin-top: 0; }
     .flow-card { position: relative; min-height: 132px; }
@@ -29,7 +31,7 @@
       </div>
       <div class="top-tools"><span class="badge badge-real">통합 프로젝트</span></div>
     </div>
-    <nav class="flow-nav" aria-label="프로젝트 안내 목차">
+    <nav class="flow-nav" aria-label="프로젝트 안내 목차" id="projectNav">
       <ol>
         <li><a href="#overview" aria-current="page">프로젝트</a></li>
         <li><a href="#roles">역할</a></li>
@@ -116,5 +118,34 @@
     </section>
     <footer class="foot project-footer">Packet.AI · 네트워크 장애를 추측이 아닌 증거로 다루는 실습 프로젝트</footer>
   </main>
+  <script>
+    (() => {
+      const links = [...document.querySelectorAll('#projectNav a[href^="#"]')];
+      const sections = links
+        .map((link) => document.querySelector(link.getAttribute('href')))
+        .filter(Boolean);
+
+      function setCurrent(id) {
+        links.forEach((link) => {
+          const current = link.getAttribute('href') === `#${id}`;
+          if (current) link.setAttribute('aria-current', 'page');
+          else link.removeAttribute('aria-current');
+        });
+      }
+
+      links.forEach((link) => {
+        link.addEventListener('click', () => setCurrent(link.hash.slice(1)));
+      });
+
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setCurrent(visible.target.id);
+      }, { rootMargin: '-25% 0px -60% 0px', threshold: [0, 0.2, 0.5] });
+
+      sections.forEach((section) => observer.observe(section));
+    })();
+  </script>
 </body>
 </html>
